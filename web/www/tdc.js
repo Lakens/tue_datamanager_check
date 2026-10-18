@@ -97,9 +97,9 @@ async function runJob(file, filename, fields, ui) {
   form.append("modules", MODULE);
   form.append("source", "website");   // for the server's use log: website or code
   for (const [k, v] of Object.entries(fields)) form.append(k, v);
-  form.append("file", file, filename);
+  if (file) form.append("file", file, filename);
 
-  ui.progress(0, "Uploading " + sizeText(file.size) + "…");
+  ui.progress(0, file ? "Uploading " + sizeText(file.size) + "…" : "Sending the link…");
   const r = await upload(form, f => ui.progress(f, "Uploading: " + Math.round(f * 100) + "%"));
   if (r.status !== 202) throw new Error(await errorText(r));
   const job = await r.json();
@@ -169,19 +169,34 @@ function setup(section) {
   const button = section.querySelector("button.go");
   const pickFolder = drop.querySelector(".pick-folder");
   const pickZip = drop.querySelector(".pick-zip");
-  let chosen = null;   // { zip: File } or { files: [{file, path}], name }
+  const urlInput = section.querySelector(".repo-url");
+  let chosen = null;   // { zip: File }, { files: [{file, path}], name } or { url }
   let serverReady = false;
 
   function reset() {
     chosen = null;
     button.disabled = true;
     drop.classList.remove("has-file");
-    text.textContent = "Drop the package folder or a .zip file here";
+    text.textContent = "Drop a folder or a .zip file here";
   }
   function ready() { button.disabled = !(chosen && serverReady) || busy; }
 
+  // A link replaces a chosen folder or .zip, and the other way round.
+  urlInput.addEventListener("input", () => {
+    const url = urlInput.value.trim();
+    if (url) {
+      reset();
+      section.querySelector(".status").hidden = true;
+      chosen = { url };
+      ready();
+    } else if (chosen && chosen.url) {
+      reset();
+    }
+  });
+
   function chooseZip(file) {
     reset();
+    urlInput.value = "";
     if (!/\.zip$/i.test(file.name)) { statusArea(section).error("Choose a folder or a .zip file."); return; }
     if (file.size > LIMITS.zip) {
       statusArea(section).error("This .zip file is " + sizeText(file.size) + "; the limit is 500 MB.");
@@ -196,6 +211,7 @@ function setup(section) {
 
   function chooseFiles(files) {
     reset();
+    urlInput.value = "";
     if (!files.length) { statusArea(section).error("The folder has no files."); return; }
     const total = files.reduce((s, f) => s + f.file.size, 0);
     if (files.length > LIMITS.files) {
@@ -251,8 +267,11 @@ function setup(section) {
     busy = true;
     ready();
     try {
-      let file, filename, name;
-      if (c.zip) {
+      let file = null, filename = null, name;
+      if (c.url) {
+        fields.url = c.url;
+        name = c.url.replace(/^https?:\/\//i, "").replace(/[\/?#]+$/, "").split("/").filter(Boolean).slice(-1)[0] || "repository";
+      } else if (c.zip) {
         file = c.zip; filename = c.zip.name; name = baseName(c.zip.name);
       } else {
         const zip = new JSZip();

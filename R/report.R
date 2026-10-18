@@ -80,7 +80,11 @@
   items$result <- unname(.tdc_result_words[items$status])
   items$result[items$item == "human_participants"] <- .tdc_people_result(people)
   summary_tbl <- data.frame(Check = items$title, Result = items$result)
+  fetched <- pkg$fetched
   package_note <- c(
+    if (!is.null(fetched)) sprintf("The package was fetched from %s: %d file%s.%s", fetched$url, fetched$n_files,
+                                   if (fetched$n_files == 1) "" else "s",
+                                   if (length(fetched$not_fetched)) sprintf(" Not fetched (too large, or not available): %s.", .tdc_list(paste0("`", fetched$not_fetched, "`"), 5)) else ""),
     if (isTRUE(pkg$zipped)) "The package was handed in as a zip; it was unpacked to check its contents.",
     if (length(pkg$wrapper)) sprintf("The package is the folder `%s/`.", paste(pkg$wrapper, collapse = "/"))
   )

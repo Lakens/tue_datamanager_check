@@ -33,7 +33,10 @@
 #'
 #' @param paper a paper object (for a data package alone, `test_paper()`, as
 #'   `report_repository()` gives it)
-#' @param local_path the data package: a folder, or a zip of one
+#' @param local_path the data package: a folder, a zip of one, or a link to
+#'   an online repository (GitHub, OSF, Zenodo, Dataverse, ...), whose public
+#'   files are downloaded (at most 100 MB per file, 500 MB in all) and checked
+#'   like a folder
 #' @param human_participants whether people took part or personal data was
 #'   used: `TRUE`, `FALSE`, or `NA` (default) to decide it from the paper and
 #'   the package
@@ -59,13 +62,14 @@ tue_datamanager_check <- function(paper, local_path = NULL,
   }
   rules <- .tdc_rules(mod_dir)
 
-  # -- the package ---------------------------------------------------------
-  pkg <- .tdc_package(local_path)
-
-  # -- metacheck's modules, with the LLM off ------------------------------
+  # -- metacheck's modules, with the LLM off (also while a linked
+  # repository is listed and fetched) -------------------------------------
   llm_before <- metacheck::llm_use()
   metacheck::llm_use(FALSE)
   on.exit(metacheck::llm_use(llm_before), add = TRUE)
+
+  # -- the package ---------------------------------------------------------
+  pkg <- .tdc_package(local_path)
   rc <- if (!is.null(pkg$path)) {
     module_run(paper, "repo_check", local_path = pkg$path, local_only = TRUE)
   } else {

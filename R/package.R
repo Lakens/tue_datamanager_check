@@ -11,8 +11,15 @@
 # local_path.
 .tdc_package <- function(local_path) {
   out <- list(path = NULL, zipped = FALSE, wrapper = NULL, outer_junk = character(0),
-              given = local_path)
+              given = local_path, fetched = NULL)
   if (is.null(local_path)) return(out)
+  if (grepl("^https?://", local_path, ignore.case = TRUE)) {
+    f <- .tdc_fetch_repo(local_path)
+    out$path <- f$path
+    out$outer_junk <- f$junk
+    out$fetched <- f
+    return(out)
+  }
   if (!file.exists(local_path)) stop("No folder or file found at ", local_path)
   path <- normalizePath(local_path, winslash = "/", mustWork = TRUE)
   if (!dir.exists(path)) {
@@ -41,6 +48,45 @@
   }
   out$path <- path
   out
+}
+
+# A link to an online repository (GitHub, OSF, Zenodo, Dataverse, ...): its
+# public files, listed by repo_check and downloaded with metacheck's
+# download_repo_files() (at most `max_file_size` MB per file and
+# `max_download_size` MB in all, as on the SURF server), are copied into a
+# temporary folder named after the repository, with the repository's folder
+# structure, so the package is checked exactly as a local folder. Junk files
+# are not downloaded (repo_check leaves them out of its file list); they come
+# back as `junk` (repo_check's useless_files), for the junk check.
+# Returns list(path, url, n_files, not_fetched, junk).
+.tdc_fetch_repo <- function(url, max_file_size = 100, max_download_size = 500) {
+  paper <- metacheck::test_paper(text = url, url = url)
+  rc <- metacheck::module_run(paper, "repo_check")
+  files <- rc$table
+  if (is.null(files) || !nrow(files)) {
+    why <- if (!is.null(rc$gated_repos) && nrow(rc$gated_repos)) paste0(" (", paste(unique(rc$gated_repos[[ncol(rc$gated_repos)]]), collapse = "; "), ")") else ""
+    stop("No files could be listed at ", url, why, call. = FALSE)
+  }
+  files <- metacheck::download_repo_files(files, max_file_size = max_file_size,
+                                          max_download_size = max_download_size)
+  rel <- if ("file_path" %in% names(files)) files$file_path else files$file_name
+  rel[is.na(rel) | !nzchar(rel)] <- files$file_name[is.na(rel) | !nzchar(rel)]
+  rel <- sub("^/+", "", gsub("\\\\", "/", rel))
+  got <- !is.na(files$file_location) & file.exists(files$file_location %||% "") &
+    !grepl("(^|/)\\.\\.(/|$)", rel)
+  name <- gsub("[^A-Za-z0-9._-]+", "_", sub("[?#].*$", "", basename(sub("/+$", "", url))))
+  if (!nzchar(name) || name %in% c(".", "..")) name <- "repository"
+  dest <- file.path(tempdir(), paste0("tdc_fetched_", as.integer(Sys.time())), name)
+  dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+  for (i in which(got)) {
+    target <- file.path(dest, rel[[i]])
+    dir.create(dirname(target), recursive = TRUE, showWarnings = FALSE)
+    file.copy(files$file_location[[i]], target, overwrite = TRUE)
+  }
+  junk <- rc$useless_files
+  list(path = normalizePath(dest, winslash = "/"), url = url, n_files = sum(got),
+       not_fetched = rel[!got],
+       junk = if (!is.null(junk) && nrow(junk)) junk$file_path else character(0))
 }
 
 # The file table from repo_check's table: path (relative, "/"), name, ext,

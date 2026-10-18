@@ -43,8 +43,9 @@ llm_model("ollama/qwen3.5:4b")
 # a folder: writes my_package_report.html in the working folder
 report_repository("path/to/my_package", modules = "tue_datamanager_check")
 
-# the results without a report, for a folder or a zip of one
+# the results without a report, for a folder, a zip of one, or a link to an online repository
 out <- module_run(test_paper(), "tue_datamanager_check", local_path = "path/to/my_package.zip")
+out <- module_run(test_paper(), "tue_datamanager_check", local_path = "https://github.com/user/repo")
 out$table          # one row per check: section, title, result, explanation
 out$traffic_light
 ```
@@ -56,7 +57,7 @@ Arguments, passed with `args = list(tue_datamanager_check = list(...))` in `repo
 
 ## Use it online, without installing anything
 
-The folder [`web/`](web) holds a web page that sends a package to metacheck's server on SURF Research Cloud and shows the report. The server must have this module installed (its `metacheck_modules` setting). A data manager drops a package folder or a .zip on the page, says whether people took part (or lets the check decide), and gets the report, to open or save, after a few minutes. The browser packs a folder into a .zip itself, hidden files included, because the check looks for those too.
+The folder [`web/`](web) holds a web page that sends a package to metacheck's server on SURF Research Cloud and shows the report. The server must have this module installed (its `metacheck_modules` setting). A data manager drops a package folder or a .zip on the page, or pastes a link to an online repository (GitHub, OSF, Zenodo, Dataverse, ...), says whether people took part (or lets the check decide), and gets the report, to open or save, after a few minutes. The browser packs a folder into a .zip itself, hidden files included, because the check looks for those too; for a link, the module fetches the repository's public files on the server (at most 100 MB per file, 500 MB in all). The page looks like the metacheck website on SURF, whose style sheet and font it uses.
 
 The same page runs in three ways:
 
@@ -102,3 +103,5 @@ Daniel Lakens wrote this module. It is licensed under the [GNU Affero General Pu
 - The files `formats.json`, `components_tue.json`, `layouts_tue.json` and `readme_tue.json` in `data/` are adapted from the TU/e rule pack for pytacheck (`scienceverse/metacheck-tue`) by Jakub Werner, licensed AGPL-3.0. The changes are listed in [SPECIFICATION.md](SPECIFICATION.md).
 - `data/README_Template_TUe.txt` is the TU/e README template, unchanged, from [Zenodo](https://doi.org/10.5281/zenodo.19692008), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); see `data/README_Template_TUe.source.txt`.
 - `web/www/jszip.min.js` is [JSZip](https://stuk.github.io/jszip/) 3.10.1 by Stuart Knightley, licensed MIT or GPLv3 (its notice is at the top of the file).
+- `web/www/site.css` is the style sheet of the metacheck website on SURF (`scienceverse/surf-research-cloud`, `site/`), with the font paths made relative; `web/www/fonts/` holds the Cabin font, licensed under the SIL Open Font License 1.1 (`OFL-Cabin.txt`).
+- `web/www/images/logo.png` is metacheck's logo; `web/www/images/tuelogo.png` is the logo of Eindhoven University of Technology (TU/e), used for TU/e's own data managers' check.
