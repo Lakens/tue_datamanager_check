@@ -1,0 +1,82 @@
+/* TU/e Data Manager Check page (tue_datamanager_check, web/). */
+:root {
+  --bg: #ffffff;
+  --fg: #1d1d1f;
+  --muted: #5b5b66;
+  --accent: #c81919;          /* TU/e red */
+  --accent-fg: #ffffff;
+  --line: #d9d9e0;
+  --panel: #f6f6f8;
+  --drop: #fbfbfd;
+  --error-bg: #fdecec;
+  --error-fg: #8a1414;
+  --warn-fg: #8a5a00;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16161a; --fg: #ececf1; --muted: #a6a6b3; --accent: #ff5a5a; --accent-fg: #16161a;
+    --line: #34343c; --panel: #1f1f25; --drop: #1b1b20; --error-bg: #3a1c1c; --error-fg: #ffb3b3; --warn-fg: #f0c060;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #16161a; --fg: #ececf1; --muted: #a6a6b3; --accent: #ff5a5a; --accent-fg: #16161a;
+  --line: #34343c; --panel: #1f1f25; --drop: #1b1b20; --error-bg: #3a1c1c; --error-fg: #ffb3b3; --warn-fg: #f0c060;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+a { color: var(--accent); }
+code { font-size: 0.92em; }
+.masthead, main, footer { max-width: 52rem; margin: 0 auto; padding: 0 16px; }
+.masthead { padding-top: 2.5rem; }
+.masthead h1 { margin: 0; font-size: 2rem; }
+.subtitle { margin: 0.25rem 0 0; color: var(--muted); }
+.intro { margin: 1.5rem 0; }
+
+.tool { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem; }
+.tool h2 { margin-top: 0; font-size: 1.3rem; }
+.drop {
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+  border: 2px dashed var(--line); border-radius: 10px; background: var(--drop);
+  padding: 1.5rem 1rem; text-align: center;
+}
+.drop.dragging { border-color: var(--accent); }
+.drop.has-file { border-style: solid; border-color: var(--accent); }
+.drop-text { font-weight: 600; overflow-wrap: anywhere; }
+.drop-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+.small-button {
+  display: inline-block; padding: 0.35rem 0.8rem; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--bg); cursor: pointer;
+}
+.small-button input { display: none; }
+.note { color: var(--muted); font-size: 0.9rem; }
+.note.warning { color: var(--warn-fg); }
+
+.people { border: 1px solid var(--line); border-radius: 8px; margin: 1rem 0; padding: 0.5rem 1rem 0.75rem; }
+.people legend { font-weight: 600; padding: 0 0.3rem; }
+.people label { display: block; margin: 0.3rem 0; }
+
+button.go, .result-button {
+  display: inline-block; border: 0; border-radius: 8px; padding: 0.6rem 1.2rem;
+  background: var(--accent); color: var(--accent-fg); font: inherit; font-weight: 600;
+  cursor: pointer; text-decoration: none;
+}
+button.go:disabled { opacity: 0.45; cursor: default; }
+.result-button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+
+.status { margin-top: 1rem; }
+.bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s; }
+.bar.unknown span { width: 35%; animation: slide 1.4s infinite ease-in-out; }
+@keyframes slide { from { margin-left: -35%; } to { margin-left: 100%; } }
+.step { margin: 0.4rem 0 0; color: var(--muted); }
+.error { background: var(--error-bg); color: var(--error-fg); border-radius: 8px; padding: 0.75rem 1rem; }
+.results { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+.results .note { flex-basis: 100%; margin: 0.2rem 0 0; }
+
+.about { margin: 2rem 0; }
+.about h2 { font-size: 1.1rem; }
+footer { padding-bottom: 2rem; color: var(--muted); font-size: 0.9rem; }

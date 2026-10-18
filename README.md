@@ -54,11 +54,23 @@ Arguments, passed with `args = list(tue_datamanager_check = list(...))` in `repo
 - `human_participants`: `TRUE` or `FALSE` when you already know whether people took part or personal data was used; the default `NA` lets the module decide. Personal data found in the data always counts as people having taken part, even with `FALSE`.
 - `readme_revised_dir`: the folder the revised README is written to (default: the working folder). It is never written into the package.
 
+## Use it online, without installing anything
+
+The folder [`web/`](web) holds a web page that sends a package to metacheck's server on SURF Research Cloud and shows the report. The server must have this module installed (its `metacheck_modules` setting). A data manager drops a package folder or a .zip on the page, says whether people took part (or lets the check decide), and gets the report, to open or save, after a few minutes. The browser packs a folder into a .zip itself, hidden files included, because the check looks for those too.
+
+The same page runs in three ways:
+
+- **On any website:** copy `web/index.html` and `web/www/` to any web host, such as GitHub Pages.
+- **As a Shiny app:** `shiny::runApp("web")`, or copy `web/` into a Shiny Server's app folder. The app only serves the page.
+- **Locally:** open `web/index.html` in a browser.
+
+In all three, the visitor's browser talks to the SURF server directly; the server allows pages from any website. The server's address is in `web/www/config.js`, and a page address ending in `?api=<address>` overrides it, for example to use a test server. When the page opens, it asks the server whether the check is installed and says so if it is not.
+
 ## What leaves your computer
 
 When you check a local folder or zip:
 
-- Nothing about the package goes online, with one exception. To decide whether people took part, the module may turn up to 3 scientific documents of the package into text: the manuscript, documents in a folder of scientific documents, the methodology, and PDFs at the top of the package. It does so only when the data and the README have not already answered the question. A PDF is sent to TU/e's GROBID server (`https://grobid.hti.ieis.tue.nl`), and to metacheck's API on SURF Research Cloud only when GROBID cannot convert it. Pass `human_participants = TRUE` or `FALSE` to skip this.
+- Nothing about the package goes online, with one exception. To decide whether people took part, the module may turn up to 3 scientific documents of the package into text: the manuscript, documents in a folder of scientific documents, the methodology, and PDFs at the top of the package. It does so only when the data and the README have not already answered the question. A PDF is sent to TU/e's GROBID server (`https://grobid.hti.ieis.tue.nl`), and to metacheck's API on SURF Research Cloud only when GROBID cannot convert it (on the SURF server itself, to its own bibr). Pass `human_participants = TRUE` or `FALSE` to skip this.
 - The language model runs on your own computer (see above).
 - metacheck's modules read only that folder: `repo_check` runs with `local_only = TRUE`, so no links are followed, and the other modules read the local copies it lists, so nothing is downloaded.
 
@@ -89,3 +101,4 @@ Daniel Lakens wrote this module. It is licensed under the [GNU Affero General Pu
 
 - The files `formats.json`, `components_tue.json`, `layouts_tue.json` and `readme_tue.json` in `data/` are adapted from the TU/e rule pack for pytacheck (`scienceverse/metacheck-tue`) by Jakub Werner, licensed AGPL-3.0. The changes are listed in [SPECIFICATION.md](SPECIFICATION.md).
 - `data/README_Template_TUe.txt` is the TU/e README template, unchanged, from [Zenodo](https://doi.org/10.5281/zenodo.19692008), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); see `data/README_Template_TUe.source.txt`.
+- `web/www/jszip.min.js` is [JSZip](https://stuk.github.io/jszip/) 3.10.1 by Stuart Knightley, licensed MIT or GPLv3 (its notice is at the top of the file).

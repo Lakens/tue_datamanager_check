@@ -130,14 +130,19 @@
     error = function(e) e)
   if (!inherits(paper, "error")) return(list(paper = paper, how = "converted with TU/e's GROBID server"))
   grobid_why <- conditionMessage(paper)
+  # convert_bibr() picks the bibr: on the SURF server itself (BIBR_API_URL is
+  # set there) its own bibr, so a job never waits for another job of the same
+  # server; elsewhere the SURF API.
+  backend <- if (nzchar(Sys.getenv("SCIVRS_API_KEY")) || nzchar(Sys.getenv("BIBR_API_URL"))) "auto" else "surf"
+  where <- if (backend == "surf") "the SURF API" else "bibr"
   paper <- tryCatch(suppressMessages(read_json(
-    metacheck::convert_bibr(doc$location, save_path = dirname(out_json), backend = "surf"))),
+    metacheck::convert_bibr(doc$location, save_path = dirname(out_json), backend = backend))),
     error = function(e) e)
   if (!inherits(paper, "error")) {
-    return(list(paper = paper, how = "converted with the SURF API, because TU/e's GROBID server could not convert it"))
+    return(list(paper = paper, how = sprintf("converted with %s, because TU/e's GROBID server could not convert it", where)))
   }
-  list(paper = NULL, why = sprintf("neither TU/e's GROBID server (%s) nor the SURF API (%s) could convert it",
-                                   grobid_why, conditionMessage(paper)))
+  list(paper = NULL, why = sprintf("neither TU/e's GROBID server (%s) nor %s (%s) could convert it",
+                                   grobid_why, where, conditionMessage(paper)))
 }
 
 # The LLM's judgement on the texts: list(answer, quote, source), or an empty
