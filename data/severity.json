@@ -1,0 +1,56 @@
+{
+  "name": "How serious each finding is",
+  "source": "The decisions in SPECIFICATION.md (2026-10-18), set from the wording of TU/e's archiving guidelines (Research Cockpit) and the RDLC document 'Using Metacheck for data package review and paper analysis': what the guidelines forbid is 'fail', what they recommend is 'warn', what needs a person's judgement is 'manual'. Change a value here to make a check stricter or milder.",
+  "severity": {
+    "too-deep": "warn",
+    "layout-none": "warn",
+    "loose-files-top": "warn",
+    "files-unclassified": "warn",
+    "package-too-large": "manual",
+    "component-wrong-format": "warn",
+    "raw-data-unclear": "manual",
+    "no-data": "fail",
+
+    "readme-missing": "warn",
+    "readme-not-top-or-text": "warn",
+    "readme-template": "warn",
+    "readme-template-text": "warn",
+    "readme-contacts": "warn",
+    "readme-file-list": "warn",
+    "readme-orcid": "warn",
+    "readme-credit": "warn",
+
+    "people-unclear": "manual",
+    "ethics-missing": "fail",
+    "ethics-unknown": "manual",
+    "ethics-wrong-format": "warn",
+    "consent-blank-template": "manual",
+
+    "format-not-preferred": "warn",
+    "format-not-listed": "manual",
+    "format-requirement-unmet": "warn",
+    "name-spaces": "fail",
+    "name-special-characters": "fail",
+    "name-other-characters": "warn",
+    "name-date-format": "warn",
+    "name-zero-padding": "warn",
+    "name-style-mixed": "warn",
+    "junk-problem": "fail",
+    "junk-suggestion": "warn",
+    "personal-data": "fail",
+    "key-file": "fail",
+    "codebook-columns-undocumented": "warn",
+    "missing-codes-mixed": "warn",
+    "code-check-flagged": "warn",
+    "package-zipped": "fail"
+  },
+  "limits": {
+    "max_depth": 3,
+    "min_layout_coverage": 0.6,
+    "flat_max_files": 10,
+    "max_package_bytes": 2e12,
+    "min_file_list_coverage": 0.8,
+    "min_contacts": 2,
+    "max_folders_listed": 10
+  }
+}

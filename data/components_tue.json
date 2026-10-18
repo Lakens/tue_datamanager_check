@@ -1,0 +1,330 @@
+{
+  "name": "TU/e package components",
+  "source": "The package components table of TU/e's archiving guidelines (Research Cockpit, 'Step 1: Check what you should archive'), as encoded in the pytacheck pack scienceverse/metacheck-tue, changed on 2026-10-18: 'measurement(s)' added to methodology, 'correspondence' to agreements, 'output(s)' folders to analysed data, .slx/.mph/.nlogo to code; the codebook in PDF or TXT only, as the guidelines ask; every component optional (the guidelines: 'not all the components mentioned might be applicable'), the metadata form not expected (it is filled in in the RAPS portal).",
+  "components": [
+    {
+      "id": "manuscript",
+      "title": "Manuscript of your paper",
+      "group": "Scientific documents",
+      "description": "Add the manuscript of the paper (PDF or TXT), also if it is a preprint.",
+      "match": {
+        "names": [
+          "man[iu]?script",
+          "(?<![a-z])(?:paper|article|preprint|postprint|publication)(?![a-z])"
+        ]
+      },
+      "required": "optional",
+      "formats": [
+        "pdf",
+        "txt"
+      ],
+      "file_types": [
+        "text"
+      ]
+    },
+    {
+      "id": "methodology",
+      "title": "Methodology, protocols, instruments and measurements",
+      "group": "Scientific documents",
+      "description": "Add the methodology, protocols or instruments (such as questionnaires) used to collect the data (PDF or TXT).",
+      "match": {
+        "names": [
+          "(?<![a-z])(?:methods?|methodology|protocols?|instruments?|measurements?|questionnaires?|interview[ _-]?guides?|procedures?|sops?)(?![a-z])"
+        ],
+        "folders": [
+          "^(?:\\d+[\\s._-]+)?(?:methodology|methods?|protocols?|instruments?|materials)$"
+        ]
+      },
+      "required": "optional",
+      "formats": [
+        "pdf",
+        "txt"
+      ],
+      "file_types": [
+        "text",
+        "image"
+      ]
+    },
+    {
+      "id": "lab_journal",
+      "title": "Lab journals or computational notebooks",
+      "group": "Scientific documents",
+      "description": "Add the lab journals or notebooks (PDF or TXT), if there are any.",
+      "match": {
+        "names": [
+          "lab[ _-]?(?:journals?|notebooks?|books?|notes?)",
+          "(?<![a-z])(?:logbooks?|notebooks?)(?![a-z])"
+        ]
+      },
+      "required": "optional",
+      "formats": [
+        "pdf",
+        "txt"
+      ],
+      "file_types": [
+        "text",
+        "image"
+      ]
+    },
+    {
+      "id": "codebook",
+      "title": "Data dictionary or codebook",
+      "group": "Scientific documents",
+      "description": "Add a data dictionary or codebook that describes every variable in the data (PDF, TXT or CSV), or describe the variables in the README.",
+      "match": {
+        "doc_role": [
+          "codebook"
+        ],
+        "names": [
+          "code[ _.-]?(?:book|boek)",
+          "data[ _.-]?(?:dict|legend)",
+          "variab(?:le|elen)[ _.-]?(?:key|list|lijst|descr|beschrijving)"
+        ],
+        "readme_sections": [
+          "variables"
+        ]
+      },
+      "required": "optional",
+      "formats": [
+        "pdf",
+        "txt"
+      ]
+    },
+    {
+      "id": "dmp",
+      "title": "Data management plan",
+      "group": "Administrative documents",
+      "description": "Add the data management plan of the project (PDF).",
+      "match": {
+        "names": [
+          "data[ _-]?management[ _-]?plan",
+          "(?<![a-z0-9])dmp(?![a-z0-9])",
+          "gegevensbeheerplan"
+        ]
+      },
+      "required": "optional",
+      "formats": [
+        "pdf"
+      ],
+      "file_types": [
+        "text",
+        "image"
+      ]
+    },
+    {
+      "id": "ethics",
+      "title": "Ethical approvals",
+      "group": "Administrative documents",
+      "description": "Add the approval of the ethical review board (ERB) (PDF).",
+      "match": {
+        "names": [
+          "ethic",
+          "ethiek",
+          "ethisch",
+          "approval",
+          "goedkeuring",
+          "(?<![a-z0-9])(?:erb|irb|metc)(?![a-z0-9])"
+        ],
+        "folders": [
+          "^(?:\\d+[\\s._-]+)?(?:ethics?|ethical|approvals?|erb|irb|metc|rec|ethiek|goedkeuring)$"
+        ]
+      },
+      "required": "optional",
+      "formats": [
+        "pdf"
+      ],
+      "file_types": [
+        "text",
+        "image"
+      ]
+    },
+    {
+      "id": "consent",
+      "title": "Informed consents (signed consent forms)",
+      "group": "Administrative documents",
+      "description": "Add the signed informed consent forms (PDF).",
+      "match": {
+        "names": [
+          "consent",
+          "toestemming",
+          "(?<![a-z])informed(?![a-z])"
+        ],
+        "folders": [
+          "^(?:\\d+[\\s._-]+)?(?:consent|informed[ _-]?consent|toestemming)$"
+        ]
+      },
+      "required": "optional",
+      "formats": [
+        "pdf"
+      ],
+      "file_types": [
+        "text",
+        "image"
+      ]
+    },
+    {
+      "id": "agreements",
+      "title": "Agreements and correspondence with research partners on data handling, e.g., NDA",
+      "group": "Administrative documents",
+      "description": "Add the agreements or non-disclosure agreements (NDAs) that apply to the data (PDF), if there are any.",
+      "match": {
+        "names": [
+          "(?<![a-z])agreements?(?![a-z])",
+          "(?<![a-z0-9])nda(?![a-z0-9])",
+          "non[ _-]?disclosure",
+          "overeenkomst",
+          "(?<![a-z])correspondence(?![a-z])"
+        ]
+      },
+      "required": "optional",
+      "formats": [
+        "pdf"
+      ],
+      "file_types": [
+        "text",
+        "image"
+      ]
+    },
+    {
+      "id": "code",
+      "title": "Code, script or computational model",
+      "group": "Code, Script, Computational model",
+      "description": "Add the code, scripts or computational models used to acquire the data, to turn raw data into processed data and to analyse it.",
+      "match": {
+        "data_type": [
+          "code"
+        ],
+        "exts": [
+          "r",
+          "rmd",
+          "qmd",
+          "py",
+          "ipynb",
+          "m",
+          "mlx",
+          "jl",
+          "sps",
+          "sas",
+          "do",
+          "ado",
+          "sh",
+          "cpp",
+          "c",
+          "java",
+          "slx",
+          "mph",
+          "nlogo"
+        ]
+      },
+      "required": "optional"
+    },
+    {
+      "id": "raw_data",
+      "title": "Raw data",
+      "group": "Data",
+      "description": "Add the raw data, as it was collected, before any cleaning or processing.",
+      "match": {
+        "names": [
+          "(?<![a-z])(?:raw|unprocessed)(?![a-z])"
+        ],
+        "folders": [
+          "^(?:\\d+[\\s._-]+)?(?:raw|unprocessed|original|collected)(?:[\\s._-]*(?:data|files?|measurements?|recordings?))?$"
+        ]
+      },
+      "required": "optional",
+      "file_types": [
+        "data",
+        "text",
+        "image",
+        "video",
+        "audio",
+        "archive",
+        "stats",
+        "data;stats",
+        "code;data"
+      ]
+    },
+    {
+      "id": "processed_data",
+      "title": "Processed data",
+      "group": "Data",
+      "description": "Add the processed data: the digitised, cleaned or anonymised versions of the raw data.",
+      "match": {
+        "names": [
+          "(?<![a-z])(?:processed|cleaned?|digiti[sz]ed|anonymi[sz]ed|pseudonymi[sz]ed|preprocessed|derived)(?![a-z])"
+        ],
+        "folders": [
+          "^(?:\\d+[\\s._-]+)?(?:processed|cleaned?|derived|digiti[sz]ed|anonymi[sz]ed|pseudonymi[sz]ed|preprocessed)(?:[\\s._-]*(?:data|files?))?$"
+        ]
+      },
+      "required": "optional",
+      "file_types": [
+        "data",
+        "text",
+        "image",
+        "video",
+        "audio",
+        "archive",
+        "stats",
+        "data;stats",
+        "code;data"
+      ]
+    },
+    {
+      "id": "analysed_data",
+      "title": "Analyzed data",
+      "group": "Data",
+      "description": "Add the analysed data, which is the data behind the figures and tables of the paper, and the figures themselves.",
+      "match": {
+        "names": [
+          "(?<![a-z])(?:analy[sz]ed|results?)(?![a-z])",
+          "(?<![a-z])(?:fig(?:ure)?s?|tab(?:le)?s?)[\\s._-]*\\d+[a-z]?(?![a-z0-9])"
+        ],
+        "folders": [
+          "^(?:\\d+[\\s._-]+)?(?:analy[sz]ed(?:[\\s._-]*data)?|analysis[\\s._-]?ready|final(?:[\\s._-]*data)?|results?|figures?|figs?|plots?|graphs?|tables?|outputs?)$",
+          "^(?:\\d+[\\s._-]+)?(?:fig(?:ure)?s?|tab(?:le)?s?)[\\s._-]*[a-z]?\\d+[a-z]?$"
+        ]
+      },
+      "required": "optional",
+      "file_types": [
+        "data",
+        "text",
+        "image",
+        "video",
+        "audio",
+        "archive",
+        "stats",
+        "data;stats",
+        "code;data"
+      ]
+    },
+    {
+      "id": "metadata_form",
+      "title": "Metadata form",
+      "group": "Metadata form",
+      "description": "The metadata form is filled in in the RAPS portal, as XML or JSON, so it does not have to be in the package.",
+      "match": {
+        "names": [
+          "(?<![a-z])metadata[^/]*\\.(?:xml|json)$"
+        ]
+      },
+      "required": "not_expected"
+    },
+    {
+      "id": "readme",
+      "title": "README file",
+      "group": "README file",
+      "description": "Add a README (TXT or MD) at the top that follows the TU/e README template.",
+      "match": {
+        "names": [
+          "^read[ _-]?me",
+          "^lees[ _-]?mij"
+        ],
+        "doc_role": [
+          "readme"
+        ]
+      },
+      "required": "optional"
+    }
+  ]
+}

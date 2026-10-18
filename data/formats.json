@@ -1,0 +1,538 @@
+{
+  "name": "TU/e preferred file formats",
+  "source": "TU/e Research Data Management, 'Data Organization & Formats', table of preferred formats (rdm.tue.nl/docs/during-research/data-organization/, read 2026-10-03). Not on that list but added, following it: .docx, .pptx, .xlsx and .xlsm, the newer formats that replace the .doc, .ppt and .xls the list advises against, as preferred; Markdown, tab-delimited text and code saved as plain text (R, MATLAB scripts, Stata, SPSS syntax, ...) as plain text; binary data files of R (.rds, .rda), statistics packages (.sav, .dta, ...) and Python (.pkl, .npy) under 'other binary files'; .geojson for GeoJSON, .mkv for Matroska video, .dgn for MicroStation and .blend for Blender (the list writes .mka, .dng and .blender).",
+  "formats": {
+    "pdf": {
+      "level": "preferred",
+      "label": "PDF/A",
+      "alternative": "PDF/A",
+      "requires": "pdfa",
+      "unmet_label": "PDF (not PDF/A)"
+    },
+    "txt": {
+      "level": "preferred",
+      "label": "Plain text (ASCII or UTF-8)"
+    },
+    "md": {
+      "level": "preferred",
+      "label": "Markdown (plain text)"
+    },
+    "markdown": {
+      "level": "preferred",
+      "label": "Markdown (plain text)"
+    },
+    "xml": {
+      "level": "preferred",
+      "label": "XML (without external links)"
+    },
+    "html": {
+      "level": "preferred",
+      "label": "HTML (without external links)",
+      "alternative": "self-contained HTML (no links to files online) or PDF/A",
+      "requires": "html-self-contained",
+      "unmet_label": "HTML that links to or loads files online"
+    },
+    "htm": {
+      "level": "preferred",
+      "label": "HTML (without external links)",
+      "alternative": "self-contained HTML (no links to files online) or PDF/A",
+      "requires": "html-self-contained",
+      "unmet_label": "HTML that links to or loads files online"
+    },
+    "doc": {
+      "level": "non-preferred",
+      "label": "Microsoft Word document (old .doc format)",
+      "alternative": "PDF/A, .docx or plain text"
+    },
+    "docx": {
+      "level": "preferred",
+      "label": "Microsoft Word document (.docx)"
+    },
+    "ppt": {
+      "level": "non-preferred",
+      "label": "Microsoft PowerPoint presentation (old .ppt format)",
+      "alternative": "PDF/A or .pptx"
+    },
+    "pptx": {
+      "level": "preferred",
+      "label": "Microsoft PowerPoint presentation (.pptx)"
+    },
+    "csv": {
+      "level": "preferred",
+      "label": "Comma-delimited text (CSV)"
+    },
+    "tsv": {
+      "level": "preferred",
+      "label": "Tab-delimited text"
+    },
+    "tab": {
+      "level": "preferred",
+      "label": "Tab-delimited text"
+    },
+    "ods": {
+      "level": "preferred",
+      "label": "OpenDocument spreadsheet"
+    },
+    "xls": {
+      "level": "non-preferred",
+      "label": "Microsoft Excel workbook (.xls)",
+      "alternative": "CSV, ODS or .xlsx"
+    },
+    "xlsb": {
+      "level": "non-preferred",
+      "label": "Microsoft Excel workbook (.xlsb)",
+      "alternative": "CSV, ODS or .xlsx"
+    },
+    "xlsx": {
+      "level": "preferred",
+      "label": "Microsoft Excel workbook (.xlsx)"
+    },
+    "xlsm": {
+      "level": "preferred",
+      "label": "Microsoft Excel workbook (.xlsm)"
+    },
+    "mat": {
+      "level": "preferred",
+      "label": "MATLAB v7.3 (HDF5)",
+      "alternative": "MATLAB v7.3 (save with -v7.3) or HDF5",
+      "requires": "mat-v7.3",
+      "unmet_label": "MATLAB file older than v7.3"
+    },
+    "nc": {
+      "level": "preferred",
+      "label": "netCDF"
+    },
+    "cdf": {
+      "level": "preferred",
+      "label": "netCDF"
+    },
+    "h5": {
+      "level": "preferred",
+      "label": "HDF5"
+    },
+    "hdf5": {
+      "level": "preferred",
+      "label": "HDF5"
+    },
+    "he5": {
+      "level": "preferred",
+      "label": "HDF5"
+    },
+    "py": {
+      "level": "preferred",
+      "label": "Python"
+    },
+    "json": {
+      "level": "preferred",
+      "label": "JSON"
+    },
+    "r": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "rmd": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "qmd": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "m": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "jl": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "sh": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "do": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "ado": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "sps": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "sas": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "stan": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "c": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "cpp": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "h": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "java": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "js": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "ipynb": {
+      "level": "preferred",
+      "label": "Code as plain text"
+    },
+    "rdata": {
+      "level": "non-preferred",
+      "label": "R data file (binary)",
+      "alternative": "CSV, or the plain-text code that makes it"
+    },
+    "rda": {
+      "level": "non-preferred",
+      "label": "R data file (binary)",
+      "alternative": "CSV, or the plain-text code that makes it"
+    },
+    "rds": {
+      "level": "non-preferred",
+      "label": "R data file (binary)",
+      "alternative": "CSV, or the plain-text code that makes it"
+    },
+    "sav": {
+      "level": "non-preferred",
+      "label": "Statistics package data file (binary)",
+      "alternative": "CSV with a codebook"
+    },
+    "por": {
+      "level": "non-preferred",
+      "label": "Statistics package data file (binary)",
+      "alternative": "CSV with a codebook"
+    },
+    "dta": {
+      "level": "non-preferred",
+      "label": "Statistics package data file (binary)",
+      "alternative": "CSV with a codebook"
+    },
+    "sas7bdat": {
+      "level": "non-preferred",
+      "label": "Statistics package data file (binary)",
+      "alternative": "CSV with a codebook"
+    },
+    "pkl": {
+      "level": "non-preferred",
+      "label": "Python data file (binary)",
+      "alternative": "CSV, HDF5 or netCDF"
+    },
+    "pickle": {
+      "level": "non-preferred",
+      "label": "Python data file (binary)",
+      "alternative": "CSV, HDF5 or netCDF"
+    },
+    "npy": {
+      "level": "non-preferred",
+      "label": "Python data file (binary)",
+      "alternative": "CSV, HDF5 or netCDF"
+    },
+    "npz": {
+      "level": "non-preferred",
+      "label": "Python data file (binary)",
+      "alternative": "CSV, HDF5 or netCDF"
+    },
+    "sql": {
+      "level": "preferred",
+      "label": "SQL"
+    },
+    "siard": {
+      "level": "preferred",
+      "label": "SIARD"
+    },
+    "tif": {
+      "level": "preferred",
+      "label": "TIFF"
+    },
+    "tiff": {
+      "level": "preferred",
+      "label": "TIFF"
+    },
+    "jpg": {
+      "level": "preferred",
+      "label": "JPEG"
+    },
+    "jpeg": {
+      "level": "preferred",
+      "label": "JPEG"
+    },
+    "png": {
+      "level": "preferred",
+      "label": "PNG"
+    },
+    "dcm": {
+      "level": "preferred",
+      "label": "DICOM"
+    },
+    "psd": {
+      "level": "non-preferred",
+      "label": "Photoshop file",
+      "alternative": "TIFF or PNG"
+    },
+    "svg": {
+      "level": "preferred",
+      "label": "SVG",
+      "alternative": "SVG without scripts",
+      "requires": "svg-no-script",
+      "unmet_label": "SVG with JavaScript"
+    },
+    "indd": {
+      "level": "non-preferred",
+      "label": "InDesign file",
+      "alternative": "SVG or PDF/A"
+    },
+    "ait": {
+      "level": "non-preferred",
+      "label": "Illustrator template",
+      "alternative": "SVG"
+    },
+    "ai": {
+      "level": "non-preferred",
+      "label": "Adobe Illustrator artwork",
+      "alternative": "SVG"
+    },
+    "eps": {
+      "level": "non-preferred",
+      "label": "Encapsulated PostScript",
+      "alternative": "SVG"
+    },
+    "dxf": {
+      "level": "preferred",
+      "label": "AutoCAD DXF"
+    },
+    "dwg": {
+      "level": "preferred",
+      "label": "AutoCAD DWG"
+    },
+    "dgn": {
+      "level": "non-preferred",
+      "label": "MicroStation DGN",
+      "alternative": "DXF or DWG"
+    },
+    "obj": {
+      "level": "preferred",
+      "label": "Wavefront OBJ"
+    },
+    "x3d": {
+      "level": "preferred",
+      "label": "X3D"
+    },
+    "x3dv": {
+      "level": "preferred",
+      "label": "X3D"
+    },
+    "x3db": {
+      "level": "preferred",
+      "label": "X3D"
+    },
+    "ply": {
+      "level": "preferred",
+      "label": "Polygon file format (PLY)"
+    },
+    "gltf": {
+      "level": "preferred",
+      "label": "glTF 2.0"
+    },
+    "glb": {
+      "level": "preferred",
+      "label": "glTF 2.0"
+    },
+    "dae": {
+      "level": "preferred",
+      "label": "COLLADA"
+    },
+    "las": {
+      "level": "preferred",
+      "label": "LASer (LAS)"
+    },
+    "laz": {
+      "level": "preferred",
+      "label": "LASer (LAS)"
+    },
+    "ifc": {
+      "level": "preferred",
+      "label": "Industry Foundation Classes (IFC)"
+    },
+    "blend": {
+      "level": "non-preferred",
+      "label": "Blender file",
+      "alternative": "OBJ, PLY or glTF"
+    },
+    "blender": {
+      "level": "non-preferred",
+      "label": "Blender file",
+      "alternative": "OBJ, PLY or glTF"
+    },
+    "bwf": {
+      "level": "preferred",
+      "label": "Broadcast Wave Format"
+    },
+    "mxf": {
+      "level": "preferred",
+      "label": "Material Exchange Format (MXF)"
+    },
+    "mka": {
+      "level": "preferred",
+      "label": "Matroska audio"
+    },
+    "flac": {
+      "level": "preferred",
+      "label": "FLAC"
+    },
+    "wav": {
+      "level": "non-preferred",
+      "label": "WAVE audio",
+      "alternative": "FLAC or Broadcast Wave (BWF)"
+    },
+    "mp3": {
+      "level": "non-preferred",
+      "label": "MP3 audio",
+      "alternative": "FLAC"
+    },
+    "mkv": {
+      "level": "preferred",
+      "label": "Matroska video"
+    },
+    "wmv": {
+      "level": "non-preferred",
+      "label": "Windows Media Video",
+      "alternative": "Matroska (.mkv) or MXF"
+    },
+    "mp4": {
+      "level": "non-preferred",
+      "label": "MPEG-4 video",
+      "alternative": "Matroska (.mkv) or MXF"
+    },
+    "m4v": {
+      "level": "non-preferred",
+      "label": "MPEG-4 video",
+      "alternative": "Matroska (.mkv) or MXF"
+    },
+    "m4a": {
+      "level": "non-preferred",
+      "label": "MPEG-4 audio",
+      "alternative": "FLAC or Matroska audio (.mka)"
+    },
+    "avi": {
+      "level": "non-preferred",
+      "label": "AVI video",
+      "alternative": "Matroska (.mkv) or MXF"
+    },
+    "mov": {
+      "level": "non-preferred",
+      "label": "QuickTime video",
+      "alternative": "Matroska (.mkv) or MXF"
+    },
+    "qt": {
+      "level": "non-preferred",
+      "label": "QuickTime video",
+      "alternative": "Matroska (.mkv) or MXF"
+    },
+    "gml": {
+      "level": "preferred",
+      "label": "GML"
+    },
+    "mif": {
+      "level": "preferred",
+      "label": "MapInfo MIF/MID"
+    },
+    "mid": {
+      "level": "preferred",
+      "label": "MapInfo MIF/MID"
+    },
+    "geojson": {
+      "level": "preferred",
+      "label": "GeoJSON"
+    },
+    "asc": {
+      "level": "preferred",
+      "label": "ASCII grid"
+    },
+    "rdf": {
+      "level": "preferred",
+      "label": "RDF/XML"
+    },
+    "trig": {
+      "level": "preferred",
+      "label": "TriG"
+    },
+    "ttl": {
+      "level": "preferred",
+      "label": "Turtle"
+    },
+    "nt": {
+      "level": "preferred",
+      "label": "N-Triples"
+    },
+    "jsonld": {
+      "level": "preferred",
+      "label": "JSON-LD"
+    },
+    "qdpx": {
+      "level": "preferred",
+      "label": "REFI-QDA project"
+    },
+    "qde": {
+      "level": "preferred",
+      "label": "REFI-QDA project"
+    },
+    "nvp": {
+      "level": "non-preferred",
+      "label": "NVivo project",
+      "alternative": "a REFI-QDA project (.qdpx), exported from NVivo"
+    },
+    "nvpx": {
+      "level": "non-preferred",
+      "label": "NVivo project",
+      "alternative": "a REFI-QDA project (.qdpx), exported from NVivo"
+    },
+    "atlproj": {
+      "level": "non-preferred",
+      "label": "ATLAS.ti project",
+      "alternative": "a REFI-QDA project (.qdpx), exported from ATLAS.ti"
+    },
+    "hpr7": {
+      "level": "non-preferred",
+      "label": "ATLAS.ti project",
+      "alternative": "a REFI-QDA project (.qdpx), exported from ATLAS.ti"
+    }
+  },
+  "open_formats": {
+    "note": "Open plain-text formats that TU/e's table does not mention, treated like code (fine): configuration, logs, citation and LaTeX files, style sheets.",
+    "exts": [
+      "yml",
+      "yaml",
+      "toml",
+      "ini",
+      "cfg",
+      "conf",
+      "log",
+      "bib",
+      "tex",
+      "sty",
+      "cls",
+      "css",
+      "cff",
+      "csl",
+      "lock",
+      "rproj"
+    ]
+  }
+}

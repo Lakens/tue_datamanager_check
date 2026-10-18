@@ -1,0 +1,26 @@
+{
+  "name": "Personal data patterns",
+  "source": "TU/e De-identification Guidelines for Research data (direct identifiers: full name, e-mail address, insurance card number, phone number, home address, IP address) and the RDLC list (e-mail addresses, BSN, TU/e student/employee IDs, IP addresses, full phone numbers). E-mail and IP addresses, and names and other identifiers in column names, are found by metacheck's data_check; the patterns below add what data_check does not find. A column is flagged when at least 'min_share' of its non-empty values match.",
+  "value_patterns": [
+    {
+      "id": "bsn",
+      "label": "Dutch citizen service number (BSN)",
+      "pattern": "^[0-9]{8,9}$",
+      "validate": "elfproef",
+      "min_share": 0.5
+    },
+    {
+      "id": "phone",
+      "label": "Phone number",
+      "pattern": "^(?:\\+|00)[1-9][0-9 ().-]{7,18}[0-9]$|^0[1-9][0-9]?[ -]?[0-9]{6,8}$|^06[ -]?[0-9]{8}$",
+      "min_share": 0.5
+    }
+  ],
+  "tue_id_patterns": [],
+  "tue_id_note": "The format of TU/e student and employee numbers is not yet known (asked of RDLC). Add a pattern here, for example {\"id\": \"tue_student\", \"label\": \"TU/e student number\", \"pattern\": \"^[0-9]{7}$\", \"min_share\": 0.5}, once it is.",
+  "key_file_names": [
+    "(?<![a-z])(?:pseudonymi[sz]ation|pseudonym|identification|identifier|linking|link|decoding|re-?identification)[ _-]?(?:key|keys|table|list|file)(?![a-z])",
+    "(?<![a-z])(?:key[ _-]?file|keyfile|sleutel(?:bestand)?|koppel(?:tabel|bestand|lijst|sleutel))(?![a-z])",
+    "(?<![a-z])(?:participant|subject|patient)[ _-]?(?:key|identities|names|contact[ _-]?details)(?![a-z])"
+  ]
+}

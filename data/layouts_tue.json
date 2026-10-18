@@ -1,0 +1,72 @@
+{
+  "layouts": [
+    {
+      "id": "tue-numbered",
+      "title": "TU/e package: numbered component folders",
+      "description": "folders for scientific documents, administrative documents, code and data (raw and processed), numbered 1 to 4, and a README at the top",
+      "parts": [
+        {
+          "id": "scientific",
+          "title": "Scientific documents",
+          "match": ["^scientific documents?$"]
+        },
+        {
+          "id": "administrative",
+          "title": "Administrative documents",
+          "match": ["^administrative documents?$"]
+        },
+        {
+          "id": "code",
+          "title": "Code and scripts",
+          "match": ["^(?:code|scripts?|software|models?)(?: and (?:code|scripts?|software|models?))*$"],
+          "parts": [
+            {"id": "r", "title": "R scripts", "match": ["^r (?:scripts?|code)$"]},
+            {"id": "python", "title": "Python scripts", "match": ["^python (?:scripts?|code)$"]},
+            {"id": "matlab", "title": "MATLAB scripts", "match": ["^matlab (?:scripts?|code)$"]}
+          ]
+        },
+        {
+          "id": "data",
+          "title": "Data",
+          "match": ["^data( ?(sets?|files?))?$"],
+          "required": true,
+          "parts": [
+            {"id": "raw", "title": "Raw data", "match": ["^(raw|unprocessed|original|collected)( data)?$"]},
+            {"id": "processed", "title": "Processed data", "match": ["^(processed|cleaned?|derived|digiti[sz]ed|anonymi[sz]ed|pseudonymi[sz]ed)( data)?$"]},
+            {"id": "analysed", "title": "Analysed data", "match": ["^(analy[sz]ed|final)( data)?$"]}
+          ]
+        }
+      ],
+      "root_files": [
+        {"id": "readme", "title": "README", "match": ["^read ?me"]}
+      ]
+    },
+    {
+      "id": "tue-figures",
+      "title": "TU/e package: one folder per figure",
+      "description": "a folder for each figure of the paper (Fig.1, Fig.2, ...) with the data behind it, the manuscript and a README at the top",
+      "parts": [
+        {
+          "id": "figure",
+          "title": "Figure",
+          "match": ["^((supplement(ary|al)|extended data|ed|suppl?) )?(fig|figure)s? ?[a-z]?\\d+[a-z]?$"],
+          "required": true,
+          "repeat": true,
+          "min": 1,
+          "example": "Fig.1"
+        },
+        {
+          "id": "table",
+          "title": "Table",
+          "match": ["^((supplement(ary|al)|extended data|ed|suppl?) )?(tab|table)s? ?[a-z]?\\d+[a-z]?$"],
+          "repeat": true,
+          "example": "Table 1"
+        }
+      ],
+      "root_files": [
+        {"id": "manuscript", "title": "Manuscript", "match": ["man[iu]?script", "paper", "article", "preprint"]},
+        {"id": "readme", "title": "README", "match": ["^read ?me"]}
+      ]
+    }
+  ]
+}

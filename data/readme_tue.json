@@ -1,0 +1,297 @@
+{
+  "name": "TU/e README template",
+  "source": "TU/e README template (Zenodo, doi 10.5281/zenodo.19692008), CC BY 4.0; the three 'Links...' lines are required, as in the template (changed 2026-10-18)",
+  "sections": [
+    {
+      "id": "general",
+      "title": "General information",
+      "hint": "1. GENERAL INFORMATION",
+      "required": true,
+      "match": [
+        "\\bgeneral\\s+information\\b"
+      ],
+      "fields": [
+        {
+          "id": "title",
+          "label": "Project or paper title",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?(?:project\\s+or\\s+paper|project|paper)\\s+title\\b"
+          ]
+        },
+        {
+          "id": "summary",
+          "label": "Project or paper summary",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?(?:project\\s+or\\s+paper|project|paper)\\s+summary\\b"
+          ]
+        },
+        {
+          "id": "authors",
+          "label": "Authors information",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?authors?\\s+information\\b"
+          ]
+        },
+        {
+          "id": "author_name",
+          "label": "Name",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?name\\s*:"
+          ]
+        },
+        {
+          "id": "orcid",
+          "label": "ORCID",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?orcid\\b"
+          ]
+        },
+        {
+          "id": "institution",
+          "label": "Institution",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?institution\\b"
+          ]
+        },
+        {
+          "id": "email",
+          "label": "Email",
+          "required": true,
+          "expect": "email",
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?e-?mail\\b"
+          ]
+        },
+        {
+          "id": "credit",
+          "label": "Contributor roles (CRediT taxonomy)",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?contributor\\s+roles?\\b"
+          ]
+        },
+        {
+          "id": "credit_roles",
+          "label": "CRediT role(s)",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?credit\\s+roles?\\b"
+          ]
+        },
+        {
+          "id": "contacts",
+          "label": "Contacts",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?contacts?\\b"
+          ]
+        },
+        {
+          "id": "date",
+          "label": "Date of data collection",
+          "required": false,
+          "match": [
+            "date\\s+of\\s+data\\s+collection"
+          ]
+        },
+        {
+          "id": "location",
+          "label": "Geographic location of data collection",
+          "required": false,
+          "match": [
+            "geographic\\s+location"
+          ]
+        },
+        {
+          "id": "funding",
+          "label": "Funding sources",
+          "required": false,
+          "match": [
+            "funding\\s+sources?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "licence",
+      "title": "Sharing and access information",
+      "hint": "2. SHARING/ACCESS INFORMATION",
+      "required": true,
+      "match": [
+        "\\bsharing\\s*(?:/|and|&)\\s*access\\b",
+        "\\bsharing\\b",
+        "\\baccess\\s+information\\b"
+      ],
+      "fields": [
+        {
+          "id": "licences",
+          "label": "Licenses/restrictions, or limitations of reuse",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?licen[cs]es?\\b"
+          ]
+        },
+        {
+          "id": "links_publications",
+          "label": "Links to publications that cite or use the data",
+          "required": true,
+          "match": [
+            "links\\s+to\\s+publications"
+          ]
+        },
+        {
+          "id": "links_locations",
+          "label": "Links to other locations of the data",
+          "required": true,
+          "match": [
+            "links\\s+to\\s+other\\s+(?:\\(.*?\\)\\s+)?locations"
+          ]
+        },
+        {
+          "id": "links_related",
+          "label": "Links to related data sets",
+          "required": true,
+          "match": [
+            "relationships?\\s+to\\s+supporting|related\\s+data\\s+sets"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "files",
+      "title": "Data and file overview",
+      "hint": "3. DATA & FILE OVERVIEW",
+      "required": true,
+      "match": [
+        "\\bdata\\s*(?:&|and)\\s*file\\s+overview\\b",
+        "\\bfile\\s+overview\\b"
+      ],
+      "fields": [
+        {
+          "id": "naming",
+          "label": "File naming convention",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?file\\s+naming\\b"
+          ]
+        },
+        {
+          "id": "file_list",
+          "label": "File list or folder tree",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?file\\s+list\\b",
+            "folder\\s+tree\\s*:"
+          ]
+        },
+        {
+          "id": "formats",
+          "label": "File formats",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?file\\s+formats?\\b"
+          ]
+        },
+        {
+          "id": "relationships",
+          "label": "Relationship between files",
+          "required": false,
+          "match": [
+            "relationships?\\s+between\\s+files"
+          ]
+        },
+        {
+          "id": "additional",
+          "label": "Additional related data not in the package",
+          "required": false,
+          "match": [
+            "additional\\s+related\\s+data"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "methods",
+      "title": "Methodological information",
+      "hint": "4. METHODOLOGICAL INFORMATION",
+      "required": true,
+      "match": [
+        "\\bmethodological\\s+information\\b",
+        "\\bmethodology\\b"
+      ],
+      "fields": [
+        {
+          "id": "collection",
+          "label": "Methods used for collection or generation of the data",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?description\\s+of\\s+methods\\b"
+          ]
+        },
+        {
+          "id": "processing",
+          "label": "Methods for processing the data",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?methods\\s+for\\s+processing\\b"
+          ]
+        },
+        {
+          "id": "software",
+          "label": "Instrument or software information",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?instrument-?\\s*(?:or\\s+)?software\\b"
+          ]
+        },
+        {
+          "id": "calibration",
+          "label": "Calibration information",
+          "required": false,
+          "match": [
+            "calibration\\s+information"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "variables",
+      "title": "Data-specific information",
+      "hint": "5. DATA-SPECIFIC INFORMATION FOR: [FILENAME]",
+      "required": true,
+      "match": [
+        "\\bdata[\\s-]+specific\\s+information\\b"
+      ],
+      "fields": [
+        {
+          "id": "variable_list",
+          "label": "Variable list (with units)",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?variable\\s+list\\b"
+          ]
+        },
+        {
+          "id": "missing_codes",
+          "label": "Missing data codes",
+          "required": true,
+          "match": [
+            "^\\s*(?:[-*+•]\\s+)?missing\\s+data\\s+codes?\\b"
+          ]
+        }
+      ]
+    }
+  ],
+  "placeholders": [
+    "<(?!/?(?:a|abbr|b|blockquote|br|center|code|details|div|em|font|h[1-6]|hr|i|img|kbd|li|ol|p|pre|small|span|strong|sub|summary|sup|table|td|th|tr|u|ul)[\\s/>])(?!(?:https?|ftp)://|mailto:)(?![^<>\\s]*@)[A-Za-z][^<>\\n]{1,600}[^<>\\s]>",
+    "(?-i:\\[(?:YYYY(?:-MM(?:-DD)?)?|NAME|FILE ?NAME|DATE|TITLE|E-?MAIL|DOI|URL|AUTHOR|ORCID|INSTITUTION|AFFILIATION)\\])",
+    "lorem ipsum",
+    "(?-i:\\b(?:TODO|TBD)\\b)"
+  ]
+}
