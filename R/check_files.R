@@ -691,13 +691,17 @@
     sprintf("- `%s`%s", rr$file_name[[i]], if (nzchar(e)) sprintf(": \"%s\"", e) else "")
   }, character(1))
   ran <- n(c("ran_ok", "errored", "timed_out"))
+  # files other files import or source are not scripts of their own
+  own <- length(oc) - n(c("run_by_import", "run_by_source"))
   found <- c(sprintf("%d of %d script%s %s run: %d without an error, %d with an error, %d still running at the time limit.",
-                     ran, length(oc), if (length(oc) == 1) "" else "s", if (ran == 1) "was" else "were",
+                     ran, own, if (own == 1) "" else "s", if (ran == 1) "was" else "were",
                      n("ran_ok"), n("errored"), n("timed_out")),
              if (n("skipped_missing_inputs")) sprintf("Not run, because files they read are not in the package: %s.", names_of("skipped_missing_inputs")),
              if (n("dependency_unavailable")) sprintf("Not run, because a package they need could not be installed: %s.", names_of("dependency_unavailable")),
              if (n("not_parsed")) sprintf("Not run, because the code could not be read: %s.", names_of("not_parsed")),
              if (n("timed_out")) sprintf("Still running at the time limit: %s.", names_of("timed_out")),
+             if (n(c("run_by_import", "run_by_source"))) sprintf("Not run on their own, because other files import or source them: %s.",
+                                                                names_of(c("run_by_import", "run_by_source"))),
              if (length(errors)) "The scripts with an error, and the last line of their error:",
              errors)
   todo <- c(if (n("errored")) "Make each script run from the package as it is, and correct the errors.",

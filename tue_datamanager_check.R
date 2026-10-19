@@ -143,9 +143,13 @@ tue_datamanager_check <- function(paper, local_path = NULL,
   code <- .tdc_check_code(cc, rules)
   # running the code: metacheck's reproducibility_check on code_check's
   # results (and data_check's, before them)
+  # The code runs in a copy of the package as it is, every file in its own
+  # place (layout = "package", metacheck 0.4.0.7), not in a Psych-DS release
+  # of its data files only.
+  repro_args <- list(cc, "reproducibility_check", execute = TRUE)
+  if (utils::packageVersion("metacheck") >= "0.4.0.7") repro_args$layout <- "package"
   rp <- if (isTRUE(run_code) && !is.null(cc) && !identical(cc$traffic_light, "na")) {
-    tryCatch(do.call(metacheck::module_run,
-                     c(list(cc, "reproducibility_check", execute = TRUE), run_args)),
+    tryCatch(do.call(metacheck::module_run, utils::modifyList(repro_args, run_args)),
              error = function(e) e)
   }
   runs <- .tdc_check_code_runs(rp, run_code, rules)
