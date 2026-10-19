@@ -1,6 +1,6 @@
 {
   "name": "TU/e package components",
-  "source": "The package components table of TU/e's archiving guidelines (Research Cockpit, 'Step 1: Check what you should archive'), as encoded in the pytacheck pack scienceverse/metacheck-tue, changed on 2026-10-18: 'measurement(s)' added to methodology, 'correspondence' to agreements, 'output(s)' folders to analysed data, .slx/.mph/.nlogo to code; the codebook in PDF or TXT only, as the guidelines ask; every component optional (the guidelines: 'not all the components mentioned might be applicable'), the metadata form not expected (it is filled in in the RAPS portal).",
+  "source": "The package components table of TU/e's archiving guidelines (Research Cockpit, 'Step 1: Check what you should archive'), as encoded in the pytacheck pack scienceverse/metacheck-tue, changed on 2026-10-18: 'measurement(s)' added to methodology, 'correspondence' to agreements, 'output(s)' folders to analysed data, .slx/.mph/.nlogo to code; the codebook in PDF or TXT only, as the guidelines ask; every component optional (the guidelines: 'not all the components mentioned might be applicable') except the methodology and the codebook, which are recommended (decided 2026-10-18: without them a package is hard to reuse; a README section on the methods or on the variables counts), the metadata form not expected (it is filled in in the RAPS portal).",
   "components": [
     {
       "id": "manuscript",
@@ -33,9 +33,12 @@
         ],
         "folders": [
           "^(?:\\d+[\\s._-]+)?(?:methodology|methods?|protocols?|instruments?|materials)$"
+        ],
+        "readme_sections": [
+          "methods"
         ]
       },
-      "required": "optional",
+      "required": "recommended",
       "formats": [
         "pdf",
         "txt"
@@ -84,7 +87,7 @@
           "variables"
         ]
       },
-      "required": "optional",
+      "required": "recommended",
       "formats": [
         "pdf",
         "txt"

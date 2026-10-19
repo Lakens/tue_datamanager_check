@@ -26,6 +26,8 @@ Where the guidelines answer a question, the module follows them.
 - follows the RDLC's sections 1.1, 1.2, 1.3 and 2;
 - starts with a summary table, one line per check with its result. The data tree and the revised README have no line. The human-participants line shows its answer instead of pass or fail.
 
+**The checklist report** (2026-10-18): every check keeps what was found (`found`), what to do (`todo`), why (`why`) and a note (`note`) apart; `detail` is all four in one text, as the module's own report shows it. The module also returns them as `checks`, which metacheck's checklist report (`report(..., report_type = "checklist")`, metacheck 0.4.0.6 or later) reads: the checks sorted into to fix, to improve, decide by hand, for information, fine and not applicable, with what was found and what to do on separate lines, and the module's tables folded under their check (the components table under "Package components", the data tree under "File classification", the README per template section and the revised README under "README follows the TU/e template", code_check's report under "Code check"). The units of numeric columns are one check "for information". The report has TU/e's logo next to metacheck's (`logo`) and starts with the module's introduction (`intro`). The web page's server asks for this report.
+
 **Rule files in `data/`:**
 - `formats.json`, `layouts_tue.json`, `components_tue.json`, `readme_tue.json` (from the pack, with the changes below)
 - `README_Template_TUe.txt` (from Zenodo)
@@ -73,7 +75,7 @@ No sizes, and no results of other checks.
 
 ### Package components
 
-The table follows the guidelines' table (Step 1): six groups, each component shown as found or not found. Every component is optional: a missing component is shown as "not found", without a warning. The summary table has one line, "Package components", with the worst result of all components.
+The table follows the guidelines' table (Step 1): six groups, each component shown as found or not found. Every component is optional, a missing one shown as "not found" without a warning, except two that are recommended (decided 2026-10-18): the methodology and the codebook. Without them a package is hard to reuse, so a missing one → **warn**, with the component's advice ("Add a data dictionary or codebook ..."). The summary table has one line, "Package components", with the worst result of all components.
 
 **Recognition:**
 - Scientific and administrative documents are taken from the files metacheck classifies as *documentation*, and recognised by name (and folder) among those.
@@ -83,9 +85,9 @@ The table follows the guidelines' table (Step 1): six groups, each component sho
 | Group | Component | Recognised by | Asked format |
 |---|---|---|---|
 | Scientific documents | Manuscript | name: manuscript (also "maniscript", "manscript"), paper, article, preprint, postprint, publication | PDF / TXT |
-| | Methodology, protocols, instruments and measurements | name: method(s), methodology, protocol(s), instrument(s), **measurement(s)**, questionnaire(s), interview guide(s), procedure(s), SOP(s); folder: methods, methodology, protocols, instruments, materials | PDF / TXT |
+| | Methodology, protocols, instruments and measurements (recommended) | name: method(s), methodology, protocol(s), instrument(s), **measurement(s)**, questionnaire(s), interview guide(s), procedure(s), SOP(s); folder: methods, methodology, protocols, instruments, materials; or a README section "Methodological information" | PDF / TXT |
 | | Lab journals or computational notebooks | name: lab journal / notebook / book / notes, logbook, notebook | PDF / TXT |
-| | Data dictionary or codebook | metacheck's codebook role; name: codebook, data dictionary, data legend, variable list; or a README section "Data-specific information" | PDF / TXT |
+| | Data dictionary or codebook (recommended) | metacheck's codebook role; name: codebook, data dictionary, data legend, variable list; or a README section "Data-specific information" | PDF / TXT |
 | Administrative documents | Data management plan | name: data management plan, DMP, gegevensbeheerplan | PDF |
 | | Ethical approvals | name or folder: ethic(s), ethiek, ethisch, approval, goedkeuring, ERB, IRB, METC | PDF |
 | | Informed consents | name or folder: consent, toestemming, informed | PDF |
@@ -99,6 +101,7 @@ The table follows the guidelines' table (Step 1): six groups, each component sho
 
 **Results:**
 - A component found in another format than asked → **warn**, naming the asked format.
+- *Methodology and codebook:* not found → **warn**.
 - *Raw data:* if none is marked but other data exists → **manual** ("is the raw data included under another name?"). If the package holds no data at all → **fail**.
 
 **The table in the report:** Group | Component | Found? | Files (the first 3, and how many) | Note (wrong format, raw data unclear).
@@ -331,7 +334,14 @@ Each file's extension is looked up in `formats.json`, ignoring capitals. Files i
 
 `code_check` runs as it is. Anything it flags → **warn**, never a fail (TU/e only wants to experiment with it). Its report is included in this section.
 
-*Built as* (2026-10-18): `code_check` runs after `codebook_check` with the LLM off. Its light yellow or red → **warn**, green → pass, no code files → not applicable. Its summary is the line's text; its full report follows in a folded box, with its headings one level lower.
+*Built as* (2026-10-18): `code_check` runs after `codebook_check` with the LLM off. Its light yellow or red → **warn**, green → pass, no code files → not applicable. What was found and what to do are taken from its table of code files, one finding per kind, each with its own advice (2026-10-18): absolute paths (named, with their file), files the code loads that are not in the package, `setwd()`, `install.packages()`, files without comments, libraries loaded in more than one place, R code that cannot be read, and no list of package versions (for R: an `renv.lock` or `sessionInfo()`; for Python: a `requirements.txt`). Its full report follows in a folded box, with its headings one level lower.
+
+### 9. The code runs
+
+Not asked by the RDLC, added on 2026-10-18 because a data manager cannot easily try this by hand. With `run_code = TRUE`, the module runs metacheck's `reproducibility_check` (`execute = TRUE`) on `code_check`'s results, with any further arguments in `run_args`; on the web page this is a tick box, ticked by default, and the SURF server runs the code in its Docker sandbox, without installing packages, at most 5 minutes per script.
+
+- *Result:* a script that errored, was still running at the time limit, could not be run because files it reads are missing, needs a package that could not be installed, or could not be read → **warn**, as for the code check. Every script ran without an error → pass. Not asked, or no R or Python code → not applicable. `reproducibility_check` itself failed → **manual**.
+- *What was found:* how many scripts were run and how each ended, the scripts that were not run and why, and for each script with an error the last line of its error. *What to do:* one line per kind of problem. Its full report (the output of each script) follows in a folded box.
 
 ### Zipped packages
 

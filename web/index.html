@@ -21,7 +21,7 @@
 </header>
 
 <main>
-  <p class="intro">This check looks at a data package the way TU/e's data managers do before it is archived through RAPS: its components and structure, its README against the TU/e template, ethical approval and consent when people took part, and its files (formats, names, junk files, personal data, codebook, missing values and code). Choose the package folder, a .zip of it, or paste a link to the repository it is in, and you will receive a report for the researcher within minutes. Everything runs on <a href="https://www.surf.nl/en/services/surf-research-cloud" target="_blank" rel="noopener">SURF Research Cloud</a> in the Netherlands, with an open source language model.</p>
+  <p class="intro">This website is made for TU/e data managers to easily compare a data and code package against the <a href="https://cockpit.research.tue.nl/helpcenter/research/portal/7/article/2813460512" target="_blank" rel="noopener">archiving guidelines</a> for RAPS (Research Archival Package Solution). Upload a paper or a folder below and you will receive a report with automated checks within minutes. Everything runs on <a href="https://www.surf.nl/en/services/compute/surf-research-cloud" target="_blank" rel="noopener">SURF Research Cloud</a> in the Netherlands, and relies on an open source language model to generate an adjusted README. This tool is GDPR compliant.</p>
 
   <div class="columns single">
 
@@ -46,6 +46,7 @@
         <label class="crossref"><input type="radio" name="people" value="true"> Yes</label>
         <label class="crossref"><input type="radio" name="people" value="false"> No <span class="note">(personal data found in the data still counts as yes)</span></label>
       </fieldset>
+      <label class="crossref"><input type="checkbox" class="run-code" checked> Run the R and Python code <span class="note">(in a closed sandbox on the server, at most 5 minutes per script)</span></label>
       <button type="button" class="go" disabled>Check the data package</button>
       <div class="status" hidden></div>
       <p class="note server-note"></p>

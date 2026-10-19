@@ -18,6 +18,20 @@ test_that("every severity the code asks for is in severity.json", {
   expect_error(tdc$.tdc_sev(rules, "no-such-finding"), "No severity")
 })
 
+test_that(".tdc_item keeps what was found and what to do apart", {
+  it <- tdc$.tdc_item("x", "2", "Title", "warn", c("Found one.", "Found two."), "Do this.", NULL, NA)
+  expect_equal(it$found, "Found one. Found two.")
+  expect_equal(it$todo, "Do this.")
+  expect_equal(it$why, "")
+  expect_equal(it$note, "")
+  expect_equal(it$detail, "Found one. Found two. Do this.")
+  # pieces that start with "- " become a list after the sentences
+  it <- tdc$.tdc_item("x", "2", "Title", "warn", c("Three files.", "- a", "- b"), c("- Do a.", "- Do b."))
+  expect_equal(it$found, "Three files.\n\n- a\n- b")
+  expect_equal(it$todo, "- Do a.\n- Do b.")
+  expect_equal(it$detail, "Three files.\n\n- a\n- b\n\n- Do a.\n- Do b.")
+})
+
 test_that(".tdc_worst", {
   expect_equal(tdc$.tdc_worst(c("pass", "warn", "manual")), "warn")
   expect_equal(tdc$.tdc_worst(c("pass", "fail", NA)), "fail")

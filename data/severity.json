@@ -8,6 +8,7 @@
     "files-unclassified": "warn",
     "package-too-large": "manual",
     "component-wrong-format": "warn",
+    "component-recommended-missing": "warn",
     "raw-data-unclear": "manual",
     "no-data": "fail",
 
@@ -42,6 +43,8 @@
     "codebook-columns-undocumented": "warn",
     "missing-codes-mixed": "warn",
     "code-check-flagged": "warn",
+    "code-run-problem": "warn",
+    "code-run-unclear": "manual",
     "package-zipped": "fail"
   },
   "limits": {

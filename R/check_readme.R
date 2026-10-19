@@ -65,7 +65,8 @@
   title <- "README at the top (TXT or MD)"
   if (is.null(readme)) {
     return(.tdc_item("readme_exists", "1.2", title, .tdc_sev(rules, "readme-missing"),
-                     "The package has no README. Add a README.txt or README.md at the top: it is the first file others open to understand the package."))
+                     "The package has no README.", "Add a README.txt or README.md at the top.",
+                     "It is the first file others open to understand the package."))
   }
   if (readme$ok) {
     return(.tdc_item("readme_exists", "1.2", title, "pass",
@@ -74,8 +75,8 @@
   problems <- c(if (!readme$at_top) "not at the top of the package",
                 if (!readme$text_format) "not plain text or Markdown")
   .tdc_item("readme_exists", "1.2", title, .tdc_sev(rules, "readme-not-top-or-text"),
-            sprintf("The only README (`%s`) is %s. Put a README.txt or README.md at the top.",
-                    readme$path, paste(problems, collapse = " and ")))
+            sprintf("The only README (`%s`) is %s.", readme$path, paste(problems, collapse = " and ")),
+            "Put a README.txt or README.md at the top.")
 }
 
 # -- the TU/e template --------------------------------------------------------
@@ -174,7 +175,8 @@
   text <- .tdc_read_text(readme$location)
   if (is.null(text) || !nzchar(trimws(text))) {
     items[[2]] <- .tdc_item("readme_template", "1.2", "README follows the TU/e template", "manual",
-                            "The README could not be read here (it is not a local text file), so its content was not checked.")
+                            "The README could not be read here (it is not a local text file), so its content was not checked.",
+                            "Check the README against the TU/e template by hand.")
     none$items <- do.call(rbind, items)
     return(none)
   }
@@ -185,8 +187,8 @@
   template <- paste(readLines(file.path(rules$dir, "data", "README_Template_TUe.txt"),
                               warn = FALSE, encoding = "UTF-8"), collapse = "\n")
   ai <- .tdc_template_ai(text, lines, template)
-  method <- if (is.data.frame(ai)) sprintf("judged by the LLM (%s)", metacheck::llm_model()) else
-    sprintf("judged by matching headings and labels, because %s", attr(ai, "why") %||% "the LLM did not answer")
+  method <- if (is.data.frame(ai)) sprintf("Judged by the LLM (%s).", metacheck::llm_model()) else
+    sprintf("Judged by matching headings and labels, because %s.", attr(ai, "why") %||% "the LLM did not answer")
   judged <- .tdc_template_rules(text, rules)
   if (is.data.frame(ai)) {
     ai <- ai[ai$id %in% lines$id & ai$status %in% c("filled", "empty", "missing"), , drop = FALSE]
@@ -230,11 +232,14 @@
   items[[length(items) + 1]] <- .tdc_item(
     "readme_template", "1.2", "README follows the TU/e template",
     if (t_problem) .tdc_sev(rules, "readme-template") else "pass",
-    c(sprintf("The README has %d of the template's %d sections; %d of its %d required lines are filled in, %d are missing and %d are left empty (%s).",
-              sum(sections$found), nrow(sections), sum(lines$required & lines$status == "filled"),
-              sum(lines$required), n_missing, n_empty, method),
-      if (length(no_s5)) sprintf("No data-specific information (section 5) for: %s.", paste0("`", no_s5, "`", collapse = ", ")),
-      if (t_problem) "The template (10.5281/zenodo.19692008) is a recommendation; not all fields may apply."))
+    found = c(sprintf("The README has %d of the template's %d sections; %d of its %d required lines are filled in, %d are missing and %d are left empty.",
+                      sum(sections$found), nrow(sections), sum(lines$required & lines$status == "filled"),
+                      sum(lines$required), n_missing, n_empty),
+              if (length(no_s5)) sprintf("No data-specific information (section 5) for: %s.", paste0("`", no_s5, "`", collapse = ", "))),
+    todo = c(if (n_missing + n_empty > 0) sprintf("Fill in the %s lines (see the table).",
+                                                    if (n_missing && n_empty) "missing and empty" else if (n_missing) "missing" else "empty"),
+             if (length(no_s5)) "Add a section 5 (data-specific information) for each data folder."),
+    note = c(if (t_problem) "The template (10.5281/zenodo.19692008) is a recommendation; not all fields may apply.", method))
 
   # template help text left in
   # Markdown code (``` blocks and `inline` code) holds commands and paths
@@ -247,8 +252,9 @@
   items[[length(items) + 1]] <- .tdc_item(
     "readme_template_text", "1.2", "No template help text left in the README",
     if (length(ph)) .tdc_sev(rules, "readme-template-text") else "pass",
-    if (length(ph)) sprintf("The README still has template help text: %s. Replace it with the real information, or remove the line.", .tdc_list(paste0("`", substr(ph, 1, 60), "`"), 5))
-    else "No template help text (<…>, [NAME], [YYYY-MM-DD], TODO, lorem ipsum) found.")
+    if (length(ph)) sprintf("The README still has template help text: %s.", .tdc_list(paste0("`", substr(ph, 1, 60), "`"), 5))
+    else "No template help text (<…>, [NAME], [YYYY-MM-DD], TODO, lorem ipsum) found.",
+    if (length(ph)) "Replace it with the real information, or remove the line.")
 
   # contacts: at least two e-mail addresses on or under the Contacts line
   at <- which(grepl("^\\s*(?:[-*+•#]+\\s*)?contacts?\\b", lines_txt, ignore.case = TRUE, perl = TRUE))
@@ -263,9 +269,10 @@
   items[[length(items) + 1]] <- .tdc_item(
     "readme_contacts", "1.2", "At least two contacts",
     if (length(contacts) >= min_c) "pass" else .tdc_sev(rules, "readme-contacts"),
-    if (!length(at)) "The README has no Contacts line. The TU/e template asks for at least two contacts for the data package, with their e-mail addresses."
+    if (!length(at)) "The README has no Contacts line."
     else if (length(contacts) >= min_c) sprintf("Contacts: %s.", paste(contacts, collapse = ", "))
-    else sprintf("The Contacts line gives %d e-mail address%s; the TU/e template asks for at least two contacts.", length(contacts), if (length(contacts) == 1) "" else "es"))
+    else sprintf("The Contacts line gives %d e-mail address%s.", length(contacts), if (length(contacts) == 1) "" else "es"),
+    if (length(contacts) < min_c) "Add at least two contacts for the data package, with their e-mail addresses, as the TU/e template asks.")
 
   # file inventory: the README names the top folders and files
   top <- c(folders[!grepl("/", folders)], files$path[!grepl("/", files$path)])
@@ -280,7 +287,8 @@
     "readme_file_list", "1.2", "The README names the files and folders",
     if (share >= rules$limits$min_file_list_coverage) "pass" else .tdc_sev(rules, "readme-file-list"),
     sprintf("The README names %d of the %d top-level folders and files (%.0f%%)%s", sum(named), length(top), 100 * share,
-            if (any(!named)) sprintf("; not named: %s.", .tdc_list(paste0("`", top[!named], "`"), 8)) else "."))
+            if (any(!named)) sprintf("; not named: %s.", .tdc_list(paste0("`", top[!named], "`"), 8)) else "."),
+    if (share < rules$limits$min_file_list_coverage) "Describe the folders and files that are not named in the README.")
 
   # ORCIDs: form and check digit (metacheck's check_orcid(), no lookup online)
   orcids <- unique(regmatches(text, gregexpr(.tdc_orcid_re, text, perl = TRUE))[[1]])
@@ -290,7 +298,8 @@
     if (length(bad_orcid)) .tdc_sev(rules, "readme-orcid") else if (length(orcids)) "pass" else "na",
     if (length(bad_orcid)) sprintf("Not a valid ORCID (wrong form or check digit): %s.", paste(bad_orcid, collapse = ", "))
     else if (length(orcids)) sprintf("%d ORCID%s, all valid.", length(orcids), if (length(orcids) == 1) "" else "s")
-    else "The README gives no ORCID.")
+    else "The README gives no ORCID.",
+    if (length(bad_orcid)) sprintf("Correct %s.", if (length(bad_orcid) == 1) "this ORCID" else "these ORCIDs"))
 
   # CRediT roles: only the 14 official roles
   role_lines <- lines_txt[grepl("credit\\s+roles?", lines_txt, ignore.case = TRUE)]
@@ -302,9 +311,10 @@
   items[[length(items) + 1]] <- .tdc_item(
     "readme_credit", "1.2", "CRediT roles are official roles",
     if (length(unknown)) .tdc_sev(rules, "readme-credit") else if (length(given)) "pass" else "na",
-    if (length(unknown)) sprintf("Not a CRediT role: %s. Use the 14 roles of the CRediT taxonomy (https://credit.niso.org), such as Data curation or Formal analysis.", paste(unique(unknown), collapse = "; "))
+    if (length(unknown)) sprintf("Not a CRediT role: %s.", paste(unique(unknown), collapse = "; "))
     else if (length(given)) "All roles are CRediT roles."
-    else "The README names no CRediT roles.")
+    else "The README names no CRediT roles.",
+    if (length(unknown)) "Use the 14 roles of the CRediT taxonomy (https://credit.niso.org), such as Data curation or Formal analysis.")
 
   revised <- .tdc_revise_readme(text, rules, pkg_info, revised_file)
   list(items = do.call(rbind, items), sections = sections, lines = lines,

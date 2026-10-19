@@ -263,6 +263,7 @@ function setup(section) {
     const fields = {};
     const people = section.querySelector("input[name=people]:checked").value;
     if (people) fields.human_participants = people;
+    fields.run_code = section.querySelector("input.run-code").checked ? "true" : "false";
     const ui = statusArea(section);
     busy = true;
     ready();

@@ -37,10 +37,22 @@
 }
 
 # One checklist row. `section` is the section of the RDLC document
-# ("1.1", "1.2", "1.3", "2").
-.tdc_item <- function(id, section, title, status, detail) {
-  data.frame(item = id, section = section, title = title,
-             status = status, detail = paste(detail, collapse = " "))
+# ("1.1", "1.2", "1.3", "2"). What was found, what to do, why and a note are
+# kept apart, for metacheck's checklist report; `detail` is all four in one
+# text, as the module's own report shows it. Sentences are joined with a
+# space; pieces that start with "- " become a list (markdown) after them.
+.tdc_item <- function(id, section, title, status, found, todo = NULL, why = NULL, note = NULL) {
+  one <- function(x) {
+    x <- as.character(unlist(x))
+    x <- x[!is.na(x) & nzchar(x)]
+    bullet <- startsWith(x, "- ")
+    out <- c(paste(x[!bullet], collapse = " "), paste(x[bullet], collapse = "\n"))
+    paste(out[nzchar(out)], collapse = "\n\n")
+  }
+  parts <- c(one(found), one(todo), one(why), one(note))
+  data.frame(item = id, section = section, title = title, status = status,
+             found = parts[[1]], todo = parts[[2]], why = parts[[3]], note = parts[[4]],
+             detail = paste(parts[nzchar(parts)], collapse = if (any(grepl("\n", parts))) "\n\n" else " "))
 }
 
 # Findings: one row per file (or folder, or column) behind an item.

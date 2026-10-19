@@ -15,7 +15,7 @@ test_that("tue_datamanager_check runs on a package", {
 
   expect_true(all(c("components", "folder_depth", "readme_exists", "readme_template", "human_participants",
                     "ethics", "consent", "formats", "name_characters", "name_conventions", "junk",
-                    "personal_data", "codebook_columns", "missing_values", "code_check", "zipped")
+                    "personal_data", "codebook_columns", "missing_values", "code_check", "code_runs", "zipped")
                   %in% out$table$item))
   expect_true(all(out$table$status %in% tdc$.tdc_status_levels))
   st <- stats::setNames(out$table$status, out$table$item)
@@ -24,6 +24,7 @@ test_that("tue_datamanager_check runs on a package", {
   expect_equal(st[["missing_values"]], "warn")    # empty cells and NA
   expect_equal(st[["ethics"]], "na")              # no people (the data steward)
   expect_equal(st[["zipped"]], "pass")
+  expect_equal(st[["code_runs"]], "na")           # run_code = FALSE
   expect_equal(out$traffic_light, "red")
   expect_equal(out$human_participants$answer, "no")
   # without a local model, no revised README is written, and the report says why
@@ -37,4 +38,20 @@ test_that("tue_datamanager_check runs on a package", {
   }
   expect_true(any(grepl("not a local Ollama model", r)))
   expect_equal(out$summary_table$tdc_fail, sum(out$table$status == "fail"))
+
+  # no codebook and no methodology: recommended components
+  expect_equal(st[["components"]], "warn")
+
+  # the checks for metacheck's checklist report: every check, what was found
+  # and what to do apart, and the tables folded under their check
+  ch <- out$checks
+  expect_true(all(out$table$title %in% ch$title))
+  expect_true(all(ch$status %in% c("fix", "improve", "decide", "info", "fine", "na")))
+  expect_equal(ch$status[ch$title == "No junk or temporary files"], "fix")
+  expect_true(all(nzchar(ch$found)))
+  expect_true(all(nzchar(ch$todo[ch$status %in% c("fix", "improve", "decide")])))
+  expect_match(ch$details[ch$title == "File classification"], "raw data.csv", fixed = TRUE)
+  expect_match(ch$found[ch$title == "Human participants or personal data"], "^No, from the data steward")
+  expect_true(file.exists(out$logo))
+  expect_match(out$intro[[1]], "TU/e's archiving guidelines")
 })

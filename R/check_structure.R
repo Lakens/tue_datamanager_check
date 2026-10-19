@@ -74,6 +74,8 @@
     found <- length(matched) > 0 || in_readme
     status <- if (comp$required == "not_expected" && !found) {
       "na"
+    } else if (comp$required == "recommended" && !found) {
+      .tdc_sev(rules, "component-recommended-missing")
     } else if (!found) {
       "not found"
     } else if (length(wrong_format)) {
@@ -87,6 +89,8 @@
               .tdc_list(wrong_format, 3))
     } else if (comp$required == "not_expected" && !found) {
       "Filled in in the RAPS portal, so it need not be in the package."
+    } else if (comp$required == "recommended" && !found) {
+      comp$description
     } else if (!found || length(matched) == 0) {
       if (in_readme) "Described in the README." else ""
     } else ""
@@ -118,10 +122,12 @@
   status <- .tdc_worst(counted)
   n_found <- sum(tbl$found == "found")
   n_expected <- sum(tbl$found != "not expected")
-  problems <- tbl$title[tbl$status %in% c("fail", "warn", "manual")]
-  detail <- sprintf("%d of the %d components TU/e lists were found.", n_found, n_expected)
-  if (length(problems)) detail <- paste(detail, sprintf("To look at: %s (see the table).", paste(problems, collapse = "; ")))
-  list(item = .tdc_item("components", "1.1", "Package components", status, detail),
+  problems <- tbl$status %in% c("fail", "warn", "manual")
+  found <- sprintf("%d of the %d components TU/e lists were found.", n_found, n_expected)
+  if (any(problems)) found <- paste(found, sprintf("To look at: %s.", paste(tbl$title[problems], collapse = "; ")))
+  todo <- if (any(problems)) paste(tbl$note[problems & nzchar(tbl$note)], collapse = " ")
+  list(item = .tdc_item("components", "1.1", "Package components", status, found, todo,
+                        note = if (!any(problems)) "Not every component applies to every study."),
        table = tbl, paths = paths)
 }
 
@@ -150,17 +156,20 @@
   more <- length(counts) - length(listed)
   folder_txt <- paste0("`", listed, "/` (", format(as.integer(counts[listed]), big.mark = ",", trim = TRUE),
                        " file", ifelse(counts[listed] == 1, "", "s"), ")")
-  detail <- c(
-    if (n_deep) sprintf("%s file%s lie%s %s folder levels deep; TU/e recommends at most %d.",
+  found <- c(
+    if (n_deep) sprintf("%s file%s lie%s %s folder levels deep.",
                         format(n_deep, big.mark = ","), if (n_deep == 1) "" else "s",
                         if (n_deep == 1) "s" else "",
-                        paste(sort(unique(depth[deep])), collapse = " or "), max_depth),
+                        paste(sort(unique(depth[deep])), collapse = " or ")),
     if (n_deep) sprintf("The folders with these files: %s%s.", paste(folder_txt, collapse = ", "),
                         if (more > 0) sprintf(", … and %d more folder%s", more, if (more == 1) "" else "s") else ""),
     if (length(deep_empty)) sprintf("Empty folders that deep: %s.", .tdc_list(paste0("`", deep_empty, "/`"), lim$max_folders_listed))
   )
   .tdc_item("folder_depth", "1.1", "Folder depth (up to 3 levels)",
-            .tdc_sev(rules, "too-deep"), detail)
+            .tdc_sev(rules, "too-deep"), found,
+            sprintf("Bring these %s to at most %d folder levels deep, as TU/e recommends.",
+                    if (n_deep && length(deep_empty)) "files and folders" else if (n_deep) "files" else "folders",
+                    max_depth))
 }
 
 # The names that make a top folder a component folder (layout C): each may be
@@ -172,6 +181,9 @@
   "admin", "administrative", "ethics", "consent", "agreement",
   "output", "result", "figure", "fig", "plot", "table"
 )
+
+# What to do when the package is not organised by component.
+.tdc_layout_todo <- "Organise the package by component, as in TU/e's examples: numbered folders (1 Scientific documents, 2 Administrative documents, 3 Code & Script, 4 Data with Raw data and Processed data), one folder per figure (Fig.1, Fig.2, …), or folders such as data/raw, data/processed, code, docs and admin."
 
 # Component-level organisation: do the top folders follow one of TU/e's
 # example layouts (numbered component folders; one folder per figure) or
@@ -188,8 +200,8 @@
       "folder_layout", "1.1", "Component-level organisation",
       if (ok) "pass" else .tdc_sev(rules, "layout-none"),
       if (ok) sprintf("The package has no folders and only %d files, so it needs none.", nrow(files))
-      else sprintf("All %s files lie in the top folder. Organise the package by component, as in TU/e's examples: numbered folders (1 Scientific documents, 2 Administrative documents, 3 Code & Script, 4 Data with Raw data and Processed data), one folder per figure (Fig.1, Fig.2, …), or folders such as data/raw, data/processed, code, docs and admin.",
-                   format(nrow(files), big.mark = ","))))
+      else sprintf("All %s files lie in the top folder.", format(nrow(files), big.mark = ",")),
+      if (!ok) .tdc_layout_todo))
   }
 
   norm <- .tdc_norm_name(top_folders)
@@ -212,13 +224,15 @@
   if (any(ok)) {
     best <- fits[ok][[which.max(vapply(fits[ok], function(f) f$coverage, numeric(1)))]]
     status <- "pass"
-    detail <- sprintf("The top folders follow %s: %s.", sub("^TU/e package: ", "TU/e's example layout, ", best$title),
-                      paste0("`", top_folders, "`", collapse = ", "))
-    if (length(best$unmatched)) detail <- paste(detail, sprintf("Not part of it: %s.", paste0("`", best$unmatched, "`", collapse = ", ")))
+    found <- sprintf("The top folders follow %s: %s.", sub("^TU/e package: ", "TU/e's example layout, ", best$title),
+                     paste0("`", top_folders, "`", collapse = ", "))
+    if (length(best$unmatched)) found <- paste(found, sprintf("Not part of it: %s.", paste0("`", best$unmatched, "`", collapse = ", ")))
+    todo <- NULL
   } else {
     status <- .tdc_sev(rules, "layout-none")
     not_comp <- top_folders[!generic]
-    detail <- sprintf("The top folder%s %s %s not %s component folder%s. Organise the package by component, as in TU/e's examples: numbered folders (1 Scientific documents, 2 Administrative documents, 3 Code & Script, 4 Data with Raw data and Processed data), one folder per figure (Fig.1, Fig.2, …), or folders such as data/raw, data/processed, code, docs and admin.",
+    todo <- .tdc_layout_todo
+    found <- sprintf("The top folder%s %s %s not %s component folder%s.",
                       if (length(not_comp) == 1) "" else "s",
                       paste0("`", not_comp, "`", collapse = ", "),
                       if (length(not_comp) == 1) "is" else "are",
@@ -227,10 +241,11 @@
   }
   if (length(loose)) {
     status <- .tdc_worst(c(status, .tdc_sev(rules, "loose-files-top")))
-    detail <- paste(detail, sprintf("Data or code files lie loose at the top: %s. Move them into the component folders.",
-                                    .tdc_list(paste0("`", loose, "`"), 5)))
+    found <- paste(found, sprintf("Data or code files lie loose at the top: %s.",
+                                  .tdc_list(paste0("`", loose, "`"), 5)))
+    todo <- c(todo, "Move the loose data and code files into the component folders.")
   }
-  .tdc_item("folder_layout", "1.1", "Component-level organisation", status, detail)
+  .tdc_item("folder_layout", "1.1", "Component-level organisation", status, found, todo)
 }
 
 # File classification: every file as data, code, documentation (readme,
@@ -258,14 +273,14 @@
     txt
   }, character(1))
   n_unknown <- sum(type == "unknown")
-  detail <- paste0(paste(parts, collapse = "; "), ".")
+  found <- paste0(paste(parts, collapse = "; "), ".")
   if (n_unknown) {
-    detail <- paste(detail, sprintf("%s file%s could not be classified; describe %s in the README.",
-                                    fmt(n_unknown), if (n_unknown == 1) "" else "s",
-                                    if (n_unknown == 1) "it" else "them"))
+    found <- paste(found, sprintf("%s file%s could not be classified.",
+                                  fmt(n_unknown), if (n_unknown == 1) "" else "s"))
   }
   .tdc_item("file_classification", "1.1", "File classification",
-            if (n_unknown) .tdc_sev(rules, "files-unclassified") else "pass", detail)
+            if (n_unknown) .tdc_sev(rules, "files-unclassified") else "pass", found,
+            if (n_unknown) sprintf("Describe %s in the README.", if (n_unknown == 1) "this file" else "these files"))
 }
 
 # Package size: over 2 TB, consult a RAPS data manager first.
@@ -275,6 +290,6 @@
   size_txt <- format(structure(total, class = "object_size"), units = "auto", standard = "SI")
   .tdc_item("package_size", "1.1", "Package size",
             if (over) .tdc_sev(rules, "package-too-large") else "pass",
-            if (over) sprintf("The package holds %s. For a package over 2 TB, consult a RAPS data manager (rdi-lab@tue.nl) before archiving.", size_txt)
-            else sprintf("The package holds %s.", size_txt))
+            sprintf("The package holds %s.", size_txt),
+            if (over) "Consult a RAPS data manager (rdi-lab@tue.nl) before archiving: the package is over 2 TB.")
 }

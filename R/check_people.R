@@ -210,10 +210,10 @@
   ethics_statements <- list()
   out <- function(answer, source, quote, how) {
     status <- if (answer == "unclear") .tdc_sev(rules, "people-unclear") else "pass"
-    detail <- c(how, if (answer == "unclear") "Check whether people took part or personal data was used, and give the answer to the module as `human_participants = TRUE` or `FALSE`.")
+    todo <- if (answer == "unclear") "Check whether people took part or personal data was used, and give the answer to the module as `human_participants = TRUE` or `FALSE`."
     list(answer = answer, source = source, quote = quote, how = how, read = read,
          ethics_statements = ethics_statements,
-         item = .tdc_item("human_participants", "1.3", title, status, detail))
+         item = .tdc_item("human_participants", "1.3", title, status, how, todo))
   }
 
   # The paper and the README are read first, whatever answers the question:
@@ -333,24 +333,29 @@
       status <- .tdc_worst(c("pass",
                              if (length(not_pdf)) .tdc_sev(rules, "ethics-wrong-format"),
                              if (length(blank) && answer != "no") .tdc_sev(rules, "consent-blank-template")))
-      detail <- c(sprintf("Found: %s.", .tdc_list(paste0("`", found, "`"), 5)),
-                  if (length(not_pdf)) sprintf("Not PDF, as asked: %s.", .tdc_list(paste0("`", not_pdf, "`"), 5)),
-                  if (length(blank) && answer != "no") sprintf("%s look%s like a blank form; add the signed forms.",
-                                                              .tdc_list(paste0("`", blank, "`"), 5), if (length(blank) == 1) "s" else ""))
-      return(.tdc_item(id, "1.3", title, status, detail))
+      blank_problem <- length(blank) && answer != "no"
+      found_txt <- c(sprintf("Found: %s.", .tdc_list(paste0("`", found, "`"), 5)),
+                     if (length(not_pdf)) sprintf("Not PDF, as asked: %s.", .tdc_list(paste0("`", not_pdf, "`"), 5)),
+                     if (blank_problem) sprintf("%s look%s like a blank form.",
+                                                .tdc_list(paste0("`", blank, "`"), 5), if (length(blank) == 1) "s" else ""))
+      todo <- c(if (length(not_pdf)) sprintf("Save %s as PDF.", if (length(not_pdf) == 1) "it" else "them"),
+                if (blank_problem) "Add the signed forms.")
+      return(.tdc_item(id, "1.3", title, status, found_txt, todo))
     }
     if (answer == "no") {
       return(.tdc_item(id, "1.3", title, "na", "Not needed: no people took part and no personal data was used."))
     }
     mention <- if (id == "ethics" && length(mentioned)) {
-      sprintf("An approval is mentioned (\"%s\"), but the letter itself must be in the package.", .tdc_short_quote(mentioned[[1]], 120))
+      sprintf("An approval is mentioned (\"%s\").", .tdc_short_quote(mentioned[[1]], 120))
     }
+    why <- if (!is.null(mention)) "The letter itself must be in the package."
     if (answer == "yes") {
       return(.tdc_item(id, "1.3", title, .tdc_sev(rules, "ethics-missing"),
-                       c(sprintf("Not found. Add %s (PDF).", what), mention)))
+                       c("Not found.", mention), sprintf("Add %s (PDF).", what), why))
     }
     .tdc_item(id, "1.3", title, .tdc_sev(rules, "ethics-unknown"),
-              c(sprintf("Not found. Check whether people took part or personal data was used; if so, add %s (PDF).", what), mention))
+              c("Not found.", mention),
+              sprintf("Check whether people took part or personal data was used; if so, add %s (PDF).", what), why)
   }
   rbind(one("ethics", "Ethical approval (ERB letter)", "the ERB approval letter"),
         one("consent", "Signed informed consent forms", "the signed informed consent forms"))

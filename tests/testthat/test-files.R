@@ -199,12 +199,53 @@ test_that(".tdc_check_missing_units reads CSV files as written", {
 test_that(".tdc_check_code", {
   expect_equal(tdc$.tdc_check_code(NULL, rules)$item$status, "na")
   expect_equal(tdc$.tdc_check_code(list(traffic_light = "na"), rules)$item$status, "na")
-  out <- tdc$.tdc_check_code(list(traffic_light = "yellow", summary_text = "\n- 1 file had no comments.",
-                                  report = "#### Code Comments"), rules)
+  cc <- list(traffic_light = "yellow", report = "#### Code Comments",
+             table = data.frame(file_name = c("a.py", "b.py"), file_path = c("code/a.py", "code/b.py"),
+                                language = "Python", percentage_comment = c(0, 20),
+                                code_abs_path = c(0, 1), absolute_paths = c("", "C:/Users/me/data")),
+             version_pin = list(pinned = FALSE))
+  out <- tdc$.tdc_check_code(cc, rules)
   expect_equal(out$item$status, "warn")
-  expect_equal(out$item$detail, "1 file had no comments.")
+  expect_match(out$item$found, "2 code files: 2 Python.", fixed = TRUE)
+  expect_match(out$item$found, "- 1 file has no comments: `code/a.py`.", fixed = TRUE)
+  expect_match(out$item$found, "`C:/Users/me/data` in `code/b.py`", fixed = TRUE)
+  expect_match(out$item$todo, "- Replace the absolute paths", fixed = TRUE)
+  expect_match(out$item$todo, "requirements.txt", fixed = TRUE)
+  expect_false(grepl("renv", out$item$todo))
   expect_true("###### Code Comments" %in% out$note)
-  expect_equal(tdc$.tdc_check_code(list(traffic_light = "green"), rules)$item$status, "pass")
+  green <- tdc$.tdc_check_code(list(traffic_light = "green"), rules)$item
+  expect_equal(green$status, "pass")
+  expect_equal(green$found, "No problems were found.")
+  expect_equal(green$todo, "")
+})
+
+test_that(".tdc_check_code_runs", {
+  # not asked to run the code
+  expect_equal(tdc$.tdc_check_code_runs(NULL, FALSE, rules)$item$status, "na")
+  # asked, but no code
+  expect_equal(tdc$.tdc_check_code_runs(NULL, TRUE, rules)$item$status, "na")
+  # reproducibility_check failed
+  out <- tdc$.tdc_check_code_runs(simpleError("no docker"), TRUE, rules)
+  expect_equal(out$item$status, "manual")
+  expect_match(out$item$found, "no docker", fixed = TRUE)
+  # every script ran
+  rp <- list(traffic_light = "green", report = "#### Run",
+             run_results = data.frame(file_name = c("a.R", "b.py"), outcome = "ran_ok", error = ""))
+  out <- tdc$.tdc_check_code_runs(rp, TRUE, rules)
+  expect_equal(out$item$status, "pass")
+  expect_match(out$item$found, "2 of 2 scripts were run: 2 without an error", fixed = TRUE)
+  expect_equal(out$item$todo, "")
+  expect_true("###### Run" %in% out$note)
+  # an error and a missing input
+  rp$run_results <- data.frame(file_name = c("a.R", "b.py", "c.R"),
+                               outcome = c("ran_ok", "errored", "skipped_missing_inputs"),
+                               error = c("", "Traceback ...\nFileNotFoundError: data.csv", ""))
+  out <- tdc$.tdc_check_code_runs(rp, TRUE, rules)
+  expect_equal(out$item$status, "warn")
+  expect_match(out$item$found, "- `b.py`: \"FileNotFoundError: data.csv\"", fixed = TRUE)
+  expect_match(out$item$found, "files they read are not in the package: `c.R`", fixed = TRUE)
+  expect_match(out$item$todo, "- Make each script run", fixed = TRUE)
+  expect_match(out$item$todo, "- Add the files the scripts read", fixed = TRUE)
 })
 
 test_that(".tdc_check_zipped", {

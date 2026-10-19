@@ -43,6 +43,11 @@ llm_model("ollama/qwen3.5:4b")
 # a folder: writes my_package_report.html in the working folder
 report_repository("path/to/my_package", modules = "tue_datamanager_check")
 
+# the same, as a checklist: what to fix and to improve first, with what was
+# found and what to do on separate lines (metacheck 0.4.0.6 or later)
+report_repository("path/to/my_package", modules = "tue_datamanager_check",
+                  report_type = "checklist")
+
 # the results without a report, for a folder, a zip of one, or a link to an online repository
 out <- module_run(test_paper(), "tue_datamanager_check", local_path = "path/to/my_package.zip")
 out <- module_run(test_paper(), "tue_datamanager_check", local_path = "https://github.com/user/repo")
@@ -54,6 +59,7 @@ Arguments, passed with `args = list(tue_datamanager_check = list(...))` in `repo
 
 - `human_participants`: `TRUE` or `FALSE` when you already know whether people took part or personal data was used; the default `NA` lets the module decide. Personal data found in the data always counts as people having taken part, even with `FALSE`.
 - `readme_revised_dir`: the folder the revised README is written to (default: the working folder). It is never written into the package.
+- `run_code`: `TRUE` to run the package's R and Python code with metacheck's `reproducibility_check` and report which scripts ran without an error (default `FALSE`). This runs the code on your computer, so only use it for a package you trust, or in a sandbox: `run_args` passes further arguments to `reproducibility_check`, such as `list(sandbox = "docker", timeout = 300)`. The web page runs the code in the SURF server's Docker sandbox when its tick box is ticked (the default).
 
 ## Use it online, without installing anything
 

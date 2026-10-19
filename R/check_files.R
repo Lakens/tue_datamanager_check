@@ -152,13 +152,22 @@
   n <- table(factor(fnd$status, .tdc_status_levels))
   n_ext <- length(unique(fnd$ext))
   in_zip <- if (nrow(members)) sprintf(" (%s inside zips)", format(nrow(members), big.mark = ",")) else ""
-  detail <- c(sprintf("%s files%s in %d formats were checked against TU/e's preferred formats.",
-                      format(nrow(fnd), big.mark = ","), in_zip, n_ext),
-              if (n[["warn"]]) sprintf("%s in a format to improve.", format(n[["warn"]], big.mark = ",")),
-              if (n[["manual"]]) sprintf("%s in a format not on TU/e's list, to decide by hand.", format(n[["manual"]], big.mark = ",")),
-              if (!n[["warn"]] && !n[["manual"]]) "All are in preferred or open formats.",
-              "See the table of formats below.")
-  list(item = .tdc_item("formats", "2", title, .tdc_worst(fnd$status), detail),
+  # per result: "9 `.npy`, 6 `.pdf`"; and what to do, per advice: "`.npy`, `.npz`: Convert ..."
+  by_ext <- function(status) {
+    f <- fnd[fnd$status == status, , drop = FALSE]
+    k <- table(factor(f$ext, unique(f$ext)))
+    paste(sprintf("%s `.%s`", format(as.integer(k), big.mark = ",", trim = TRUE), names(k)), collapse = ", ")
+  }
+  flagged <- tbl[tbl$status %in% c("warn", "manual") & nzchar(tbl$`What to do`), , drop = FALSE]
+  advice <- split(flagged$Extension, factor(flagged$`What to do`, unique(flagged$`What to do`)))
+  todo <- sprintf("%s: %s", vapply(advice, function(e) paste0("`", unique(e), "`", collapse = ", "), character(1)), names(advice))
+  if (length(todo) > 1) todo <- paste0("- ", todo)
+  found <- c(sprintf("%s files%s in %d formats were checked against TU/e's preferred formats.",
+                     format(nrow(fnd), big.mark = ","), in_zip, n_ext),
+             if (n[["warn"]]) sprintf("- %s in a format to improve: %s.", format(n[["warn"]], big.mark = ","), by_ext("warn")),
+             if (n[["manual"]]) sprintf("- %s in a format not on TU/e's list, to decide by hand: %s.", format(n[["manual"]], big.mark = ","), by_ext("manual")),
+             if (!n[["warn"]] && !n[["manual"]]) "All are in preferred or open formats.")
+  list(item = .tdc_item("formats", "2", title, .tdc_worst(fnd$status), found, todo),
        table = tbl[, setdiff(names(tbl), "status")], findings = fnd)
 }
 
@@ -207,14 +216,14 @@
   }
   n_fail <- sum(fnd$status == "fail")
   n_warn <- sum(fnd$status == "warn")
-  detail <- c(if (n_fail) sprintf("%s name%s with a space or a character TU/e says not to use (~ ! @ # $ %% ^ & * : ?).",
-                                  format(n_fail, big.mark = ","), if (n_fail == 1) "" else "s"),
-              if (n_warn) sprintf("%s name%s with another special character (such as an accented letter or a bracket).",
-                                  format(n_warn, big.mark = ","), if (n_warn == 1) "" else "s"),
-              "Use only letters, digits, underscores and dashes, for example `raw_data` instead of `Raw data`.")
+  found <- c(if (n_fail) sprintf("%s name%s with a space or a character TU/e says not to use (~ ! @ # $ %% ^ & * : ?).",
+                                 format(n_fail, big.mark = ","), if (n_fail == 1) "" else "s"),
+             if (n_warn) sprintf("%s name%s with another special character (such as an accented letter or a bracket).",
+                                 format(n_warn, big.mark = ","), if (n_warn == 1) "" else "s"))
+  todo <- "Use only letters, digits, underscores and dashes, for example `raw_data` instead of `Raw data`."
   tbl <- data.frame(Name = paste0("`", fnd$path, "`"), Problem = fnd$problem,
                     Result = unname(.tdc_result_words[fnd$status]))
-  list(item = .tdc_item("name_characters", "2", title, .tdc_worst(fnd$status), detail),
+  list(item = .tdc_item("name_characters", "2", title, .tdc_worst(fnd$status), found, todo),
        table = tbl, findings = fnd)
 }
 
@@ -296,13 +305,16 @@
                 table = NULL, findings = fnd))
   }
   n_mixed <- if (is.null(mixed)) 0 else nrow(mixed)
-  detail <- c(if (nrow(dates)) sprintf("%s name%s with a date not written as YYYY-MM-DD.", format(nrow(dates), big.mark = ","), if (nrow(dates) == 1) "" else "s"),
-              if (nrow(pad)) sprintf("%s numbered file%s without leading zeros (so they do not sort in order).", format(nrow(pad), big.mark = ","), if (nrow(pad) == 1) "" else "s"),
-              if (n_mixed) sprintf("%s folder%s whose names mix snake_case, kebab-case and camelCase; use one style per folder.", format(n_mixed, big.mark = ","), if (n_mixed == 1) "" else "s"))
+  found <- c(if (nrow(dates)) sprintf("%s name%s with a date not written as YYYY-MM-DD.", format(nrow(dates), big.mark = ","), if (nrow(dates) == 1) "" else "s"),
+             if (nrow(pad)) sprintf("%s numbered file%s without leading zeros (so they do not sort in order).", format(nrow(pad), big.mark = ","), if (nrow(pad) == 1) "" else "s"),
+             if (n_mixed) sprintf("%s folder%s whose names mix snake_case, kebab-case and camelCase.", format(n_mixed, big.mark = ","), if (n_mixed == 1) "" else "s"))
+  todo <- c(if (nrow(dates)) "Write dates as YYYY-MM-DD.",
+            if (nrow(pad)) "Number files with leading zeros (01, 02, ..., 10).",
+            if (n_mixed) "Use one naming style per folder.")
   shown <- ifelse(fnd$path == "(top of the package)", fnd$path, paste0("`", fnd$path, "`"))
   tbl <- data.frame(`Name or folder` = shown, Problem = fnd$problem,
                     Result = unname(.tdc_result_words[fnd$status]), check.names = FALSE)
-  list(item = .tdc_item("name_conventions", "2", title, .tdc_worst(fnd$status), detail),
+  list(item = .tdc_item("name_conventions", "2", title, .tdc_worst(fnd$status), found, todo),
        table = tbl, findings = fnd)
 }
 
@@ -378,17 +390,19 @@
   title <- "No personal data"
   if (!nrow(pd)) {
     return(list(item = .tdc_item("personal_data", "2", title, "pass",
-                                 sprintf("No personal data was found in the %d table%s read, and no file is named as a pseudonymisation key. The check looks for patterns (e-mail addresses, names, BSN and phone numbers, free text, coordinates); it cannot rule out personal data.",
-                                         n_tables, if (n_tables == 1) "" else "s")),
+                                 sprintf("No personal data was found in the %d table%s read, and no file is named as a pseudonymisation key.",
+                                         n_tables, if (n_tables == 1) "" else "s"),
+                                 note = "The check looks for patterns (e-mail addresses, names, BSN and phone numbers, free text, coordinates); it cannot rule out personal data."),
                 table = NULL, findings = pd))
   }
   keys <- pd$path[pd$kind == "a pseudonymisation key file"]
   cols <- pd[pd$kind != "a pseudonymisation key file", , drop = FALSE]
   n_cols <- nrow(unique(cols[c("path", "column")]))
-  detail <- c(if (n_cols) sprintf("%d column%s may hold personal data (see the table). Remove direct identifiers or replace them by pseudonyms before archiving, as TU/e's de-identification guidelines describe.",
-                                  n_cols, if (n_cols == 1) "" else "s"),
-              if (length(keys)) sprintf("%s look%s like a pseudonymisation key: keep keys encrypted and apart from the data, and delete them when they are no longer needed; never archive them with the data.",
-                                        .tdc_list(paste0("`", keys, "`"), 5), if (length(keys) == 1) "s" else ""))
+  found <- c(if (n_cols) sprintf("%d column%s may hold personal data (see the table).", n_cols, if (n_cols == 1) "" else "s"),
+             if (length(keys)) sprintf("%s look%s like a pseudonymisation key.",
+                                       .tdc_list(paste0("`", keys, "`"), 5), if (length(keys) == 1) "s" else ""))
+  todo <- c(if (n_cols) "Remove direct identifiers or replace them by pseudonyms before archiving, as TU/e's de-identification guidelines describe.",
+            if (length(keys)) "Never archive a pseudonymisation key with the data: keep keys encrypted and apart from the data, and delete them when they are no longer needed.")
   # one row per column (or key file), with everything found in it
   key <- paste(pd$path, pd$column, sep = "\r")
   tbl <- do.call(rbind, lapply(split(pd, factor(key, unique(key))), function(g) {
@@ -398,7 +412,7 @@
                Result = .tdc_result_words[[.tdc_worst(g$status)]], check.names = FALSE)
   }))
   rownames(tbl) <- NULL
-  list(item = .tdc_item("personal_data", "2", title, .tdc_worst(pd$status), detail),
+  list(item = .tdc_item("personal_data", "2", title, .tdc_worst(pd$status), found, todo),
        table = tbl, findings = pd)
 }
 
@@ -430,7 +444,8 @@
   rownames(tbl) <- NULL
   list(item = .tdc_item("codebook_columns", "2", title, .tdc_sev(rules, "codebook-columns-undocumented"),
                         sprintf("%d of the %d columns are not described in the codebook or the README's variable list (see the table).",
-                                nrow(undescribed), nrow(tbl_cb))),
+                                nrow(undescribed), nrow(tbl_cb)),
+                        "Describe these columns in the codebook or the README."),
        table = tbl, findings = undescribed[, c("source_file", "column_name")])
 }
 
@@ -518,26 +533,29 @@
     left <- num[!by_name & !in_docs, , drop = FALSE]
     no_unit <- sprintf("`%s` (`%s`)", left$column_name, left$source_file)
   }
-  units_note <- if (length(no_unit)) {
-    sprintf("For information: %d numeric column%s %s no recognisable unit in the column name, the codebook or the README: %s. Where a column has a unit, name it in the codebook or the README.",
-            length(no_unit), if (length(no_unit) == 1) "" else "s", if (length(no_unit) == 1) "has" else "have", .tdc_list(no_unit, 15))
+  units <- if (length(no_unit)) {
+    list(found = sprintf("%d numeric column%s %s no recognisable unit in the column name, the codebook or the README: %s.",
+                         length(no_unit), if (length(no_unit) == 1) "" else "s", if (length(no_unit) == 1) "has" else "have", .tdc_list(no_unit, 5)),
+         todo = "Where a column has a unit, name it in the codebook or the README.")
   }
+  units_note <- if (!is.null(units)) paste("For information:", units$found, units$todo)
   if (!length(previews)) {
     return(list(item = .tdc_item("missing_values", "2", title, "na", "No tables were read."),
-                table = NULL, findings = NULL, note = units_note))
+                table = NULL, findings = NULL, note = units_note, units = units))
   }
   if (is.null(mixed)) {
     return(list(item = .tdc_item("missing_values", "2", title, "pass",
                                  sprintf("Each of the %d table%s read uses at most one notation for missing values.",
                                          length(previews), if (length(previews) == 1) "" else "s")),
-                table = NULL, findings = NULL, note = units_note))
+                table = NULL, findings = NULL, note = units_note, units = units))
   }
   tbl <- data.frame(File = paste0("`", mixed$path, "`"), `Notations for missing values (columns)` = mixed$notations,
                     check.names = FALSE)
   list(item = .tdc_item("missing_values", "2", title, .tdc_sev(rules, "missing-codes-mixed"),
-                        sprintf("%d table%s use%s more than one notation for missing values (for example empty cells and -999); use one, and say which in the codebook or README.",
-                                nrow(mixed), if (nrow(mixed) == 1) "" else "s", if (nrow(mixed) == 1) "s" else "")),
-       table = tbl, findings = mixed, note = units_note)
+                        sprintf("%d table%s use%s more than one notation for missing values (for example empty cells and -999).",
+                                nrow(mixed), if (nrow(mixed) == 1) "" else "s", if (nrow(mixed) == 1) "s" else ""),
+                        "Use one notation per table, and say which in the codebook or the README."),
+       table = tbl, findings = mixed, note = units_note, units = units)
 }
 
 # -- 2.8 code check ----------------------------------------------------------------
@@ -550,12 +568,152 @@
     return(list(item = .tdc_item("code_check", "2", title, "na", "The package has no code files."),
                 table = NULL, note = NULL))
   }
-  summary <- gsub("\\s+", " ", gsub("(^|\n)\\s*-\\s*", " ", cc$summary_text %||% ""))
   status <- if (cc$traffic_light %in% c("red", "yellow")) .tdc_sev(rules, "code-check-flagged") else "pass"
+  fc <- .tdc_code_findings(cc)
   report <- gsub("^(#+) ", "\\1## ", unlist(strsplit(paste(cc$report %||% character(0), collapse = "\n"), "\n")))
-  list(item = .tdc_item("code_check", "2", title, status, trimws(summary)),
+  list(item = .tdc_item("code_check", "2", title, status,
+                        c(fc$files, if (length(fc$found)) paste0("- ", fc$found) else "No problems were found."),
+                        if (length(fc$todo) > 1) paste0("- ", fc$todo) else fc$todo),
        table = NULL,
        note = c("::: {.callout-note collapse=\"true\" title=\"code_check's report\"}", report, ":::"))
+}
+
+# What code_check found, per kind, from its table of code files (one row per
+# file), with what to do about each: list(files, found, todo).
+.tdc_code_findings <- function(cc) {
+  tbl <- cc$table
+  if (!is.data.frame(tbl)) tbl <- data.frame(file_name = character(0))
+  col <- function(x) if (x %in% names(tbl)) tbl[[x]] else rep(NA, nrow(tbl))
+  shown <- if ("file_path" %in% names(tbl)) ifelse(is.na(tbl$file_path), tbl$file_name, tbl$file_path) else tbl$file_name
+  shown <- paste0("`", shown, "`")
+  n <- function(k, one, more) sprintf("%d %s", k, if (k == 1) one else more)
+  langs <- table(factor(col("language")))
+  files <- if (nrow(tbl)) {
+    sprintf("%s: %s.", n(nrow(tbl), "code file", "code files"),
+            paste(sprintf("%d %s", as.integer(langs), names(langs)), collapse = ", "))
+  }
+  found <- todo <- character(0)
+  add <- function(f, t) {
+    found <<- c(found, f)
+    todo <<- c(todo, t)
+  }
+
+  abs <- which(col("code_abs_path") > 0)
+  if (length(abs)) {
+    paths <- vapply(abs, function(i) {
+      p <- trimws(strsplit(col("absolute_paths")[[i]] %||% "", ",", fixed = TRUE)[[1]])
+      sprintf("%s in %s", .tdc_list(paste0("`", p[nzchar(p)], "`"), 2), shown[[i]])
+    }, character(1))
+    add(sprintf("%s absolute paths, which only exist on the author's computer: %s.",
+                n(length(abs), "file has", "files have"), paste(paths, collapse = "; ")),
+        "Replace the absolute paths with paths relative to the package.")
+  }
+  miss <- which(col("loaded_files_missing") > 0)
+  if (length(miss)) {
+    add(sprintf("%s files that are not in the package: %s.", n(length(miss), "file loads", "files load"),
+                paste(sprintf("%s (in %s)", col("loaded_files_missing_names")[miss], shown[miss]), collapse = "; ")),
+        "Add the missing files, or correct their names in the code.")
+  }
+  setwd <- which(col("code_setwd") > 0)
+  if (length(setwd)) {
+    add(sprintf("%s `setwd()`: %s.", n(length(setwd), "file calls", "files call"), .tdc_list(shown[setwd], 5)),
+        "Remove `setwd()`, and use paths relative to the package.")
+  }
+  inst <- which(col("code_install_packages") > 0)
+  if (length(inst)) {
+    add(sprintf("%s `install.packages()`: %s.", n(length(inst), "file calls", "files call"), .tdc_list(shown[inst], 5)),
+        "Remove `install.packages()`, and list the packages the code needs instead.")
+  }
+  none <- which(col("percentage_comment") == 0)
+  if (length(none)) {
+    add(sprintf("%s no comments: %s.", n(length(none), "file has", "files have"), .tdc_list(shown[none], 5)),
+        "Add comments that explain what the code does.")
+  }
+  lib <- which(col("library_max_between") > 3)
+  if (length(lib)) {
+    add(sprintf("%s libraries in more than one place: %s.", n(length(lib), "file loads", "files load"), .tdc_list(shown[lib], 5)),
+        "Load all libraries in one block near the top of each file.")
+  }
+  parse <- which(col("parse_error") %in% TRUE)
+  if (length(parse)) {
+    add(sprintf("%s could not be read as R code: %s.", n(length(parse), "file", "files"), .tdc_list(shown[parse], 5)),
+        "Correct the code so it can be read.")
+  }
+  # whether the versions are written down, per language (metacheck 0.4.0.6
+  # checks Python package lists too; before, only R's)
+  vp <- cc$version_pin
+  lang <- names(langs)
+  env_pinned <- if (exists(".code_env_pinned", asNamespace("metacheck"))) {
+    metacheck:::.code_env_pinned(vp, lang)
+  } else isTRUE(vp$pinned)
+  if (!is.null(vp) && !env_pinned) {
+    r_missing <- "R" %in% lang && !isTRUE(vp$pinned)
+    py_missing <- "Python" %in% lang && !isTRUE(vp$python_pinned)
+    add("No list of the package versions the code used was found.",
+        c(if (r_missing) "Add an `renv.lock` file or the output of `sessionInfo()`, with the R package versions used.",
+          if (py_missing) "Add a `requirements.txt` with the Python package versions used.",
+          if (!r_missing && !py_missing) "Write down the software and package versions used in the README."))
+  }
+  list(files = files, found = found, todo = todo)
+}
+
+# -- running the code -----------------------------------------------------------------
+
+# metacheck's reproducibility_check, run on the code (`rp`: its output, an
+# error, or NULL when the code was not run): every script that errored, timed
+# out or could not be run is a warn, as for the code check; its report is
+# shown under the line.
+.tdc_check_code_runs <- function(rp, run_code, rules) {
+  title <- "The code runs (metacheck's reproducibility_check)"
+  none <- function(status, found, todo = NULL) {
+    list(item = .tdc_item("code_runs", "2", title, status, found, todo), table = NULL, note = NULL)
+  }
+  if (!isTRUE(run_code)) return(none("na", "The code was not run (ask for it with `run_code = TRUE`)."))
+  if (inherits(rp, "error") || identical(rp$traffic_light, "fail")) {
+    why <- if (inherits(rp, "error")) conditionMessage(rp) else paste(rp$report %||% "", collapse = " ")
+    return(none(.tdc_sev(rules, "code-run-unclear"), sprintf("The code could not be run: %s", why),
+                "Check by hand whether the code runs."))
+  }
+  rr <- rp$run_results
+  if (is.null(rp) || !is.data.frame(rr) || !nrow(rr) || !"outcome" %in% names(rr)) {
+    return(none("na", "The package has no R or Python code that could be run."))
+  }
+  oc <- rr$outcome
+  names_of <- function(o) .tdc_list(paste0("`", rr$file_name[oc %in% o], "`"), 5)
+  n <- function(o) sum(oc %in% o)
+  first_line <- function(x) {
+    x <- trimws(strsplit(x %||% "", "\n", fixed = TRUE)[[1]])
+    x <- x[nzchar(x)]
+    if (length(x)) .tdc_short_quote(x[[length(x)]], 150) else ""
+  }
+  errors <- vapply(which(oc == "errored"), function(i) {
+    e <- if ("error" %in% names(rr)) first_line(rr$error[[i]]) else ""
+    sprintf("- `%s`%s", rr$file_name[[i]], if (nzchar(e)) sprintf(": \"%s\"", e) else "")
+  }, character(1))
+  ran <- n(c("ran_ok", "errored", "timed_out"))
+  found <- c(sprintf("%d of %d script%s %s run: %d without an error, %d with an error, %d still running at the time limit.",
+                     ran, length(oc), if (length(oc) == 1) "" else "s", if (ran == 1) "was" else "were",
+                     n("ran_ok"), n("errored"), n("timed_out")),
+             if (n("skipped_missing_inputs")) sprintf("Not run, because files they read are not in the package: %s.", names_of("skipped_missing_inputs")),
+             if (n("dependency_unavailable")) sprintf("Not run, because a package they need could not be installed: %s.", names_of("dependency_unavailable")),
+             if (n("not_parsed")) sprintf("Not run, because the code could not be read: %s.", names_of("not_parsed")),
+             if (n("timed_out")) sprintf("Still running at the time limit: %s.", names_of("timed_out")),
+             if (length(errors)) "The scripts with an error, and the last line of their error:",
+             errors)
+  todo <- c(if (n("errored")) "Make each script run from the package as it is, and correct the errors.",
+            if (n("skipped_missing_inputs")) "Add the files the scripts read, or say in the README where they can be found.",
+            if (n("dependency_unavailable")) "List the packages the code needs, with their versions.",
+            if (n("not_parsed")) "Correct the code so it can be read.",
+            if (n("timed_out")) "Say in the README how long the scripts take to run.")
+  if (length(todo) > 1) todo <- paste0("- ", todo)
+  status <- if (n(c("errored", "timed_out", "skipped_missing_inputs", "not_parsed", "dependency_unavailable"))) {
+    .tdc_sev(rules, "code-run-problem")
+  } else "pass"
+  report <- gsub("^(#+) ", "\\1## ", unlist(strsplit(paste(rp$report %||% character(0), collapse = "\n"), "\n")))
+  list(item = .tdc_item("code_runs", "2", title, status, found, todo,
+                        note = "Run by metacheck's reproducibility_check; its report shows the output of each script."),
+       table = NULL,
+       note = c("::: {.callout-note collapse=\"true\" title=\"reproducibility_check's report\"}", report, ":::"))
 }
 
 # -- zipped packages ------------------------------------------------------------------
@@ -569,11 +727,12 @@
     return(list(item = .tdc_item("zipped", "2", title, "pass", "The package is not zipped and holds no archives."),
                 table = NULL))
   }
-  detail <- c(if (isTRUE(pkg$zipped)) "The package was handed in as a zip.",
-              if (length(archives)) sprintf("The package holds %d archive%s: %s.", length(archives),
-                                            if (length(archives) == 1) "" else "s", .tdc_list(paste0("`", archives, "`"), 5)),
-              "Data packages should not be zipped before submission for RAPS: hand in the folder, with its files unpacked.")
-  list(item = .tdc_item("zipped", "2", title, .tdc_sev(rules, "package-zipped"), detail), table = NULL)
+  found <- c(if (isTRUE(pkg$zipped)) "The package was handed in as a zip.",
+             if (length(archives)) sprintf("The package holds %d archive%s: %s.", length(archives),
+                                           if (length(archives) == 1) "" else "s", .tdc_list(paste0("`", archives, "`"), 5)))
+  list(item = .tdc_item("zipped", "2", title, .tdc_sev(rules, "package-zipped"), found,
+                        "Hand in the folder, with its files unpacked.",
+                        "Data packages should not be zipped before submission for RAPS."), table = NULL)
 }
 
 # -- 2.4 junk and temporary files -----------------------------------------------
@@ -603,9 +762,12 @@
   tbl <- tbl[order(match(tbl$status, .tdc_status_levels)), , drop = FALSE]
   rownames(tbl) <- NULL
   n_problem <- sum(u$status == .tdc_sev(rules, "junk-problem"))
-  detail <- c(sprintf("%s junk or temporary file%s (see the table).", format(nrow(u), big.mark = ","), if (nrow(u) == 1) "" else "s"),
-              if (n_problem) "Remove them before archiving: files the operating system or an editor adds, backups, temporary files and R history (which can hold passwords) do not belong in a data package.",
-              if (any(u$status == .tdc_sev(rules, "junk-suggestion"))) "Version-control folders (.git) and editor settings (.idea, .vscode) can be kept only on purpose.")
-  list(item = .tdc_item("junk", "2", title, .tdc_worst(u$status), detail),
+  kinds <- vapply(groups, function(g) sprintf("%s %s", format(nrow(g), big.mark = ","), g$kind[[1]]), character(1))
+  found <- sprintf("%s junk or temporary file%s: %s.", format(nrow(u), big.mark = ","), if (nrow(u) == 1) "" else "s",
+                   paste(kinds, collapse = ", "))
+  todo <- c(if (n_problem) "Remove these files before archiving.",
+            if (any(u$status == .tdc_sev(rules, "junk-suggestion"))) "Keep version-control folders (.git) and editor settings (.idea, .vscode) only on purpose.")
+  why <- if (n_problem) "Files the operating system or an editor adds, backups, temporary files and R history (which can hold passwords) do not belong in a data package."
+  list(item = .tdc_item("junk", "2", title, .tdc_worst(u$status), found, todo, why),
        table = tbl[, setdiff(names(tbl), "status")], findings = u)
 }

@@ -43,13 +43,21 @@
 #' @param readme_revised_dir the folder to write the revised README to
 #'   (default: the working folder, where `report_repository()` writes its
 #'   report)
+#' @param run_code whether to run the package's R and Python code with
+#'   metacheck's reproducibility_check (default `FALSE`): it runs the code on
+#'   this computer, so only ask for it for a package you trust, or in a
+#'   sandbox (`run_args`)
+#' @param run_args further arguments to reproducibility_check when
+#'   `run_code = TRUE`, such as `sandbox = "docker"` and `timeout` (seconds per
+#'   script)
 #' @param ... further arguments (not used)
 #'
 #' @returns a list with the checklist (`table`), the summary, the traffic
 #'   light and the report
 tue_datamanager_check <- function(paper, local_path = NULL,
                                   human_participants = NA,
-                                  readme_revised_dir = ".", ...) {
+                                  readme_revised_dir = ".", run_code = FALSE,
+                                  run_args = list(), ...) {
   # -- this module's own folder: its rules (data/) and helper code (R/) ------
   # module_run() sources this file from inside its own frame, where
   # `module_path` is the path of this file.
@@ -133,15 +141,24 @@ tue_datamanager_check <- function(paper, local_path = NULL,
   cc <- tryCatch(module_run(if (!is.null(cb)) cb else if (!is.null(dc)) dc else rc, "code_check"),
                  error = function(e) NULL)
   code <- .tdc_check_code(cc, rules)
+  # running the code: metacheck's reproducibility_check on code_check's
+  # results (and data_check's, before them)
+  rp <- if (isTRUE(run_code) && !is.null(cc) && !identical(cc$traffic_light, "na")) {
+    tryCatch(do.call(metacheck::module_run,
+                     c(list(cc, "reproducibility_check", execute = TRUE), run_args)),
+             error = function(e) e)
+  }
+  runs <- .tdc_check_code_runs(rp, run_code, rules)
   zipped <- .tdc_check_zipped(pkg, files, rules)
   items <- rbind(items, fmt$item, chars$item, conv$item, junk$item, pers$item, cbc$item, miss$item,
-                 code$item, zipped$item)
+                 code$item, runs$item, zipped$item)
   file_checks <- list(formats = fmt, name_characters = chars, name_conventions = conv, junk = junk,
                       personal_data = pers, codebook_columns = cbc, missing_values = miss,
-                      code_check = code, zipped = zipped)
+                      code_check = code, code_runs = runs, zipped = zipped)
 
   # -- the result ----------------------------------------------------------
   report <- .tdc_report(items, comp$table, tree, pkg, rd, people, file_checks)
+  checks <- .tdc_checks(items, comp$table, tree, rd, people, file_checks)
   counts <- table(factor(items$status, c("fail", "warn", "manual", "pass", "na")))
   summary_text <- sprintf("%d to fix, %d to improve, %d to decide by hand, %d fine.",
                           counts[["fail"]], counts[["warn"]], counts[["manual"]], counts[["pass"]])
@@ -166,6 +183,11 @@ tue_datamanager_check <- function(paper, local_path = NULL,
     missing_mixed = miss$findings,
     traffic_light = tl,
     summary_text = summary_text,
-    report = report
+    report = report,
+    # for metacheck's checklist report (report_type("checklist"))
+    checks = checks,
+    intro = c("This report checks the data package against TU/e's archiving guidelines, the way the RAPS data managers do. Each check below says what is fine and what to fix or improve before archiving.",
+              .tdc_package_note(pkg)),
+    logo = file.path(mod_dir, "web", "www", "images", "tuelogo.png")
   )
 }
