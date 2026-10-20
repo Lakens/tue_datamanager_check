@@ -9,7 +9,7 @@
 
 const MODULE = "tue_datamanager_check";
 const API = (new URLSearchParams(location.search).get("api") || window.TDC_API ||
-             "https://metacheckserve.src-training-01.src.surf-hosted.nl/api").replace(/\/+$/, "");
+             "https://metacheckserve.metacheck.src.surf-hosted.nl/api").replace(/\/+$/, "");
 const MB = 1024 * 1024;
 const LIMITS = {               // the web interface's limits (its api/api.R)
   zip: 500 * MB,
