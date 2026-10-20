@@ -1,6 +1,6 @@
 # Helpers for the tests of tue_datamanager_check.
 #
-# Run the tests from the repository's top folder, with metacheck 0.4.0.4 or
+# Run the tests from the repository's top folder, with metacheck 0.4.0 or
 # later loaded:
 #   testthat::test_dir("tests/testthat")
 # The tests never call a language model, GROBID or the SURF API: the model is

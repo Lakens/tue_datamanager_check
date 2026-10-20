@@ -11,10 +11,10 @@ Each check gives one of five results: *to fix*, *to improve*, *decide by hand*, 
 
 ## What you need
 
-- **R with metacheck 0.4.0.4 or later.** Until that version is released, install metacheck from its development branch:
+- **R with metacheck 0.4.0 or later:**
 
   ```r
-  pak::pkg_install("scienceverse/metacheck@external-modules")
+  pak::pkg_install("scienceverse/metacheck")
   ```
 
 - **[Ollama](https://ollama.com) with a local model (optional, recommended).** The module uses a language model for three things: checking the README against the template, writing the revised README, and deciding whether people took part. It only ever uses a model running on your own computer through Ollama, and refuses any other model, so the README and the package's documents never leave your computer for this. The module was built and tested with `qwen3.5:4b`, run with a context of 16,384 tokens:
@@ -44,7 +44,7 @@ llm_model("ollama/qwen3.5:4b")
 report_repository("path/to/my_package", modules = "tue_datamanager_check")
 
 # the same, as a checklist: what to fix and to improve first, with what was
-# found and what to do on separate lines (metacheck 0.4.0.6 or later)
+# found and what to do on separate lines
 report_repository("path/to/my_package", modules = "tue_datamanager_check",
                   report_type = "checklist")
 

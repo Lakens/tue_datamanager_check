@@ -29,7 +29,7 @@
 #'
 #' @author Daniel Lakens
 #'
-#' @metacheck 0.4.0.4
+#' @metacheck 0.4.0
 #'
 #' @param paper a paper object (for a data package alone, `test_paper()`, as
 #'   `report_repository()` gives it)
@@ -220,13 +220,17 @@ tue_datamanager_check <- function(paper, local_path = NULL,
   # running the code: metacheck's reproducibility_check on code_check's
   # results (and data_check's, before them)
   # The code runs in a copy of the package as it is, every file in its own
-  # place (layout = "package", metacheck 0.4.0.7), not in a Psych-DS release
-  # of its data files only.
+  # place (layout = "package"), not in a Psych-DS release of its data files
+  # only. Whether reproducibility_check has `layout` is asked, not read from
+  # metacheck's version: the numbers went back after the 0.4.0 release
+  # (development versions 0.4.0.4 to 0.4.0.11, then 0.4.0.1).
   rp <- if (isTRUE(run_code) && failed(cc)) {
     simpleError(paste("it needs metacheck's code_check, which stopped:", conditionMessage(cc)))
   } else if (isTRUE(run_code) && !is.null(cc) && !identical(cc$traffic_light, "na")) {
     repro_args <- list(cc, "reproducibility_check", execute = TRUE)
-    if (utils::packageVersion("metacheck") >= "0.4.0.7") repro_args$layout <- "package"
+    has_layout <- tryCatch("layout" %in% names(metacheck::module_info("reproducibility_check")$arg_defaults),
+                           error = function(e) FALSE)
+    if (has_layout) repro_args$layout <- "package"
     run_quietly(do.call(metacheck::module_run, utils::modifyList(repro_args, run_args)))
   }
   if (failed(cc)) cc <- NULL
