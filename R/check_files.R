@@ -727,7 +727,7 @@
     add(sprintf("%s could not be read as R code: %s.", n(length(parse), "file", "files"), .tdc_list(shown[parse], 5)),
         "Correct the code so it can be read.")
   }
-  # whether the versions are written down, per language (metacheck 0.4.0.6
+  # whether the versions are written down, per language (metacheck 0.4.0
   # checks Python package lists too; before, only R's)
   vp <- cc$version_pin
   lang <- names(langs)
