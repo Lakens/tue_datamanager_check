@@ -447,7 +447,8 @@
   reason <- gsub("[[:space:]]+", " ", reason)
   reason <- gsub("filepath: [^ ]+", "", reason)
   if (!is.na(location)) reason <- gsub(location, name, reason, fixed = TRUE)
-  reason <- gsub("'?/[^ ']*/([^/ ']+)'?", "\\1", reason)
+  # any other path, on Linux (/tmp/x/a.csv) or Windows (C:\Users\x\a.csv)
+  reason <- gsub("'?(?:[A-Za-z]:)?[\\\\/][^ ']*[\\\\/]([^\\\\/ ']+)'?", "\\1", reason, perl = TRUE)
   reason <- trimws(reason)
   if (!nzchar(reason)) "The reader gave no reason." else reason
 }
