@@ -5,7 +5,7 @@ A [metacheck](https://github.com/scienceverse/metacheck) module that checks a re
 - **1.1 Components and structure:** which of the package components TU/e lists are there, folder depth, how the folders are organised, file classification, package size, and the full file tree.
 - **1.2 README:** whether there is a README at the top, whether it follows the [TU/e README template](https://doi.org/10.5281/zenodo.19692008) line by line, template text left in, contacts, the file list, ORCIDs and CRediT roles. It also writes a revised README in the template's structure, as a suggestion.
 - **1.3 Research with human participants or personal data:** whether people took part (yes, no or unclear, with the sentence that shows it), and then whether the ERB approval letter and the signed informed consent forms are there.
-- **2 File checks:** file formats against TU/e's preferred formats, spaces and special characters in names, naming conventions, junk files, personal data, columns against the codebook, notations for missing values, metacheck's code check, and zipped packages.
+- **2 File checks:** file formats against TU/e's preferred formats, data files that cannot be opened, spaces and special characters in names, naming conventions, junk files, personal data, columns against the codebook, notations for missing values, metacheck's code check, and zipped packages.
 
 Each check gives one of five results: *to fix*, *to improve*, *decide by hand*, *fine* or *not applicable*. The report's light is red when anything is to fix, yellow when anything is to improve or to decide by hand, and green otherwise. Every decision behind the checks is written down in [SPECIFICATION.md](SPECIFICATION.md).
 

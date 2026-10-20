@@ -145,7 +145,8 @@
   }
 
   # 2: each file check's table, and code_check's own report
-  titles <- c(formats = "Show all formats", name_characters = "Show the names", name_conventions = "Show the names and folders",
+  titles <- c(formats = "Show all formats", data_readable = "Show the files",
+              name_characters = "Show the names", name_conventions = "Show the names and folders",
               junk = "Show the files", personal_data = "Show what was found", codebook_columns = "Show the columns",
               missing_values = "Show the tables")
   for (id in names(titles)) {

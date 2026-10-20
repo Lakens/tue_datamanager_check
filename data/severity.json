@@ -30,6 +30,7 @@
     "format-not-preferred": "warn",
     "format-not-listed": "manual",
     "format-requirement-unmet": "warn",
+    "data-unreadable": "manual",
     "name-spaces": "fail",
     "name-special-characters": "fail",
     "name-other-characters": "warn",

@@ -179,7 +179,8 @@
 # Every file and folder name of the package: path, kind ("file"/"folder"),
 # name. Folder paths end in "/".
 .tdc_names <- function(files, folders) {
-  data.frame(path = c(paste0(folders, "/"), files$path),
+  # paste0() gives "/" for no folders at all, hence the if
+  data.frame(path = c(if (length(folders)) paste0(folders, "/"), files$path),
              kind = c(rep("folder", length(folders)), rep("file", nrow(files))),
              name = c(basename(folders), basename(files$path)))
 }
@@ -416,6 +417,81 @@
        table = tbl, findings = pd)
 }
 
+# -- data files that cannot be opened -------------------------------------------
+
+# Why a data file could not be opened, in plain words, from data_check's
+# warning (`reason`, which can hold the file's path on this computer) and the
+# file's first bytes: a text file saved with a spreadsheet's extension (as
+# ImageJ saves its Results.xls), or a spreadsheet that is damaged.
+.tdc_unreadable_reason <- function(name, location, reason) {
+  ext <- tolower(tools::file_ext(name))
+  head <- if (!is.na(location) && file.exists(location)) {
+    tryCatch(readBin(location, "raw", 4096), error = function(e) raw(0))
+  } else raw(0)
+  # an Excel or OpenDocument file always has zero bytes near its start
+  is_text <- length(head) > 0 && !any(head == as.raw(0))
+  if (ext %in% c("xls", "xlsx", "xlsm", "ods") && is_text) {
+    first <- strsplit(rawToChar(head), "\r?\n")[[1]][1]
+    if (is.na(first)) first <- ""
+    sep <- if (grepl("\t", first)) "tsv" else if (grepl("[,;]", first)) "csv" else "txt"
+    what <- c(tsv = "tab-separated values", csv = "comma-separated values", txt = "plain text")[[sep]]
+    return(sprintf("It is a text file (%s) with the extension .%s, not a spreadsheet; rename it to .%s.", what, ext, sep))
+  }
+  if (ext %in% c("xlsx", "xlsm") && grepl("zip file .* cannot be opened", reason)) {
+    return(sprintf("It is not a valid .%s file: it may be damaged, or another kind of file with this extension.", ext))
+  }
+  if (ext == "xls" && grepl("libxls error", reason)) {
+    return("It is not a valid .xls file: it may be damaged or password-protected, or another kind of file with this extension.")
+  }
+  # data_check's own words, without paths on this computer
+  reason <- gsub("[[:space:]]+", " ", reason)
+  reason <- gsub("filepath: [^ ]+", "", reason)
+  if (!is.na(location)) reason <- gsub(location, name, reason, fixed = TRUE)
+  # any other path, on Linux (/tmp/x/a.csv) or Windows (C:\Users\x\a.csv)
+  reason <- gsub("'?(?:[A-Za-z]:)?[\\\\/][^ ']*[\\\\/]([^\\\\/ ']+)'?", "\\1", reason, perl = TRUE)
+  reason <- trimws(reason)
+  if (!nzchar(reason)) "The reader gave no reason." else reason
+}
+
+# The data files data_check could not open: `unreadable` holds data_check's
+# own warnings for them ("<file name>: <reason>"), `dc_error` the error when
+# data_check itself stopped; `files` is the package's file table, to look
+# inside each file. A file that cannot be opened here may also not open for
+# whoever reuses the data (damaged, empty, password-protected, or text with a
+# spreadsheet's extension), so a person must look: manual.
+.tdc_check_data_readable <- function(unreadable, dc_error, rules, files = NULL) {
+  title <- "Data files can be opened"
+  if (!is.null(dc_error)) {
+    return(list(item = .tdc_check_failed("data_readable", "2", title, dc_error,
+                                         what = "Reading the data files (metacheck's data_check)"),
+                table = NULL, findings = NULL))
+  }
+  if (!length(unreadable)) {
+    return(list(item = .tdc_item("data_readable", "2", title, "pass",
+                                 "Every data file the check reads (tables, spreadsheets, statistics files) could be opened."),
+                table = NULL, findings = NULL))
+  }
+  file <- sub(":.*$", "", unreadable)
+  why <- trimws(sub("^[^:]*:", "", unreadable))
+  # data_check names a file by its name only; its path in the package and its
+  # location come from the file table
+  at <- if (!is.null(files)) match(file, files$name) else rep(NA_integer_, length(file))
+  path <- ifelse(is.na(at), file, files$path[at])
+  location <- if (!is.null(files)) files$location[at] else rep(NA_character_, length(file))
+  why <- vapply(seq_along(file), function(i) .tdc_unreadable_reason(file[[i]], location[[i]], why[[i]]), character(1))
+  file <- path
+  text_file <- grepl("^It is a text file", why)
+  tbl <- data.frame(File = paste0("`", file, "`"), `Why it could not be opened` = why, check.names = FALSE)
+  list(item = .tdc_item("data_readable", "2", title, .tdc_sev(rules, "data-unreadable"),
+                        sprintf("%d data file%s could not be opened: %s (see the table). %s not checked for personal data, missing values or the codebook.",
+                                length(file), if (length(file) == 1) "" else "s", .tdc_list(paste0("`", file, "`"), 5),
+                                if (length(file) == 1) "It was" else "They were"),
+                        c(if (any(text_file)) "Give text files the extension of what they hold (.tsv, .csv or .txt).",
+                          if (!all(text_file)) sprintf("Open %s yourself. If it is damaged, empty or password-protected, replace it with a working copy, preferably in an open format such as CSV.",
+                                                       if (any(text_file)) "the other files" else if (length(file) == 1) "the file" else "each file"))),
+       table = tbl, findings = data.frame(path = file, problem = why))
+}
+
 # -- 2.6 columns against the codebook -------------------------------------------
 
 # codebook_check's matching: every column of a table that no codebook or
@@ -486,7 +562,19 @@
                                       na.strings = character(0), quote = "\"", comment.char = "",
                                       check.names = FALSE, nrows = 1e5, fill = TRUE, encoding = "UTF-8"),
                     error = function(e) NULL)
-    if (!is.null(raw)) return(raw)
+    if (!is.null(raw)) {
+      # a file in the older Windows encoding (as Excel often saves CSV) is
+      # not valid UTF-8, which text functions such as trimws() refuse;
+      # read as Latin-1 instead, as .tdc_read_text() does
+      to_utf8 <- function(x) {
+        bad <- !is.na(x) & !validUTF8(x)
+        x[bad] <- iconv(x[bad], "latin1", "UTF-8", sub = "")
+        x
+      }
+      raw[] <- lapply(raw, to_utf8)
+      names(raw) <- to_utf8(names(raw))
+      return(raw)
+    }
   }
   preview
 }

@@ -47,6 +47,14 @@ test_that(".tdc_people_ai drops a quote that is not in the texts", {
   expect_length(tdc$.tdc_people_ai(list("the README" = "x")), 0)   # refused: not a local model
 })
 
+test_that(".tdc_short_quote and the summary line without a quote", {
+  expect_equal(tdc$.tdc_short_quote(NA_character_), "")
+  expect_equal(tdc$.tdc_short_quote("a  b"), "a b")
+  # the model's "unclear" without a quote (NA) stopped the report
+  expect_equal(tdc$.tdc_people_result(list(answer = "unclear", source = NA_character_, quote = "")),
+               "unclear, decide by hand")
+})
+
 test_that(".tdc_science_docs: order, exclusions", {
   f <- data.frame(path = c("manuscript_v2.pdf", "1 Scientific documents/Smith_2024.pdf",
                            "1 Scientific documents/Protocols & methodologies.txt", "poster.pdf",

@@ -55,6 +55,19 @@
              detail = paste(parts[nzchar(parts)], collapse = if (any(grepl("\n", parts))) "\n\n" else " "))
 }
 
+# The row of a check that stopped with an error (a file the readers cannot
+# handle, or a mistake in the check): decide by hand, with the error, so the
+# report still shows every other check. `what` names what failed when that
+# is not the check itself (such as metacheck's data_check).
+.tdc_check_failed <- function(id, section, title, error, what = "This check") {
+  msg <- if (inherits(error, "condition")) conditionMessage(error) else as.character(error)
+  msg <- sub("[.[:space:]]+$", "", trimws(gsub("[[:space:]]+", " ", paste(msg, collapse = " "))))
+  .tdc_item(id, section, title, "manual",
+            sprintf("%s could not be completed, because of an error: %s.", what, msg),
+            c("Check this by hand.",
+              "Please report the error, with the package if you can share it, at https://github.com/Lakens/tue_datamanager_check/issues."))
+}
+
 # Findings: one row per file (or folder, or column) behind an item.
 .tdc_findings <- function(item, path, problem, status) {
   if (length(path) == 0) {

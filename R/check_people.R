@@ -177,7 +177,9 @@
     return(structure(list(), why = attr(ans, "why") %||% "the LLM gave no answer"))
   }
   answer <- as.character(ans$answer[[1]])
+  # the model leaves the quote out (NA) for "unclear"
   quote <- trimws(as.character(ans$quote[[1]] %||% ""))
+  if (!length(quote) || is.na(quote)) quote <- ""
   # the source is the text the quote is in (not the model's name for it)
   norm <- function(x) trimws(gsub("\\s+", " ", gsub("[^a-z0-9]+", " ", tolower(x))))
   in_text <- if (nzchar(norm(quote))) {
@@ -192,6 +194,7 @@
 
 # Shortened for a summary line.
 .tdc_short_quote <- function(x, n = 160) {
+  if (!length(x) || is.na(x[[1]])) return("")
   x <- gsub("\\s+", " ", trimws(x))
   if (nchar(x) > n) paste0(substr(x, 1, n - 1), "…") else x
 }

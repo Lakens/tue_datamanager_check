@@ -19,4 +19,9 @@
 .people .crossref { margin: 0 0 6px; }
 
 .note.warning { color: var(--error); }
+
+/* an error with an explanation: paragraphs and lists (files the browser cannot read) */
+.error p { margin: 0 0 6px; }
+.error ul { margin: 0 0 8px; padding-left: 20px; }
+.error li { overflow-wrap: anywhere; margin-bottom: 2px; }
 .server-note { margin: 12px 0 0; overflow-wrap: anywhere; }

@@ -77,6 +77,14 @@ test_that(".tdc_check_name_characters", {
   expect_equal(ok$item$status, "pass")
 })
 
+test_that(".tdc_check_name_characters: a package without folders", {
+  # paste0(character(0), "/") is "/": this crashed every package without subfolders
+  out <- tdc$.tdc_check_name_characters(files_of(c("a b.csv", "b.csv")), character(0), rules)
+  expect_equal(out$findings$path, "a b.csv")
+  expect_equal(out$item$status, "fail")
+  expect_equal(nrow(tdc$.tdc_names(files_of("b.csv"), character(0))), 1)
+})
+
 test_that(".tdc_name_styles", {
   expect_equal(tdc$.tdc_name_styles("raw_data.csv"), "snake_case")
   expect_equal(tdc$.tdc_name_styles("raw-data.csv"), "kebab-case")
@@ -192,6 +200,45 @@ test_that(".tdc_check_missing_units reads CSV files as written", {
   # units: weight_kg by its name, height by the README line; score has none
   expect_match(out$note, "`score`")
   expect_false(grepl("`weight_kg`|`height`|`id`", out$note))
+})
+
+test_that(".tdc_check_missing_units: a CSV in the Windows (Latin-1) encoding", {
+  d <- withr::local_tempdir()
+  # "José" with é as the single Latin-1 byte E9, as Excel saves CSV on Windows
+  writeBin(c(charToRaw("name,score\nJos"), as.raw(0xe9), charToRaw(",3\nAnn,\n")), file.path(d, "raw.csv"))
+  files <- files_of("raw.csv", location = file.path(d, "raw.csv"))
+  dc <- list(previews = list("raw.csv" = data.frame(name = c("Jose", "Ann"), score = c(3, NA))),
+             table = data.frame(source_file = "raw.csv", column_name = c("name", "score"),
+                                representation = c("text", "numeric"), role = "measure", unit = NA_character_))
+  out <- tdc$.tdc_check_missing_units(dc, files, "", rules)   # stopped: "input string 1 is invalid UTF-8"
+  expect_true(out$item$status %in% c("pass", "warn"))
+  raw <- tdc$.tdc_raw_table(files[1, ], NULL)
+  expect_true(all(validUTF8(raw$name)))
+  expect_equal(raw$name[[1]], "José")
+})
+
+test_that(".tdc_check_data_readable", {
+  expect_equal(tdc$.tdc_check_data_readable(character(0), NULL, rules)$item$status, "pass")
+  out <- tdc$.tdc_check_data_readable("broken.xlsx: zip file cannot be opened", NULL, rules)
+  expect_equal(out$item$status, "manual")
+  expect_match(out$item$found, "`broken.xlsx`")
+  expect_equal(out$table[["Why it could not be opened"]], "zip file cannot be opened")
+  # a text file with a spreadsheet's extension (as ImageJ saves Results.xls),
+  # with data_check's reason, which names the file's place on this computer
+  d <- withr::local_tempdir()
+  writeLines(c("Image\tArea", "a.tif\t3"), file.path(d, "Results.xls"))
+  files <- files_of("fig1/Results.xls", location = file.path(d, "Results.xls"))
+  txt <- tdc$.tdc_check_data_readable(
+    sprintf("Results.xls: \n  filepath: %s\n  libxls error: Unable to open file", file.path(d, "Results.xls")),
+    NULL, rules, files)
+  expect_equal(txt$table$File, "`fig1/Results.xls`")
+  expect_match(txt$table[["Why it could not be opened"]], "text file \\(tab-separated values\\).*rename it to .tsv")
+  expect_false(grepl(d, txt$item$found, fixed = TRUE))
+  expect_match(txt$item$todo, "extension of what they hold")
+  expect_equal(tdc$.tdc_unreadable_reason("a.csv", NA, sprintf("cannot open '%s/a.csv' now", d)), "cannot open a.csv now")
+  stopped <- tdc$.tdc_check_data_readable(character(0), simpleError("out of memory"), rules)
+  expect_equal(stopped$item$status, "manual")
+  expect_match(stopped$item$found, "data_check.*out of memory")
 })
 
 # -- 2.8 code and zipped ----------------------------------------------------------------
