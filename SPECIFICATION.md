@@ -28,6 +28,8 @@ Where the guidelines answer a question, the module follows them.
 
 **The checklist report** (2026-10-18): every check keeps what was found (`found`), what to do (`todo`), why (`why`) and a note (`note`) apart; `detail` is all four in one text, as the module's own report shows it. The module also returns them as `checks`, which metacheck's checklist report (`report(..., report_type = "checklist")`, metacheck 0.4.0.6 or later) reads: the checks sorted into to fix, to improve, decide by hand, for information, fine and not applicable, with what was found and what to do on separate lines, and the module's tables folded under their check (the components table under "Package components", the data tree under "File classification", the README per template section and the revised README under "README follows the TU/e template", code_check's report under "Code check"). The units of numeric columns are one check "for information". The report has TU/e's logo next to metacheck's (`logo`) and starts with the module's introduction (`intro`). The web page's server asks for this report.
 
+**A check that stops with an error** (2026-10-20): the check becomes *manual*, with the error and a request to report it, and every other check still runs, so one file the readers cannot handle (a CSV in an unusual encoding, a damaged spreadsheet) never costs the whole report. The same holds when one of metacheck's modules stops (`data_check`, `codebook_check`, `code_check`): its check says so, instead of "no data" or "no code files". Only when `repo_check` cannot list the package's files is there no report, with that reason. Found by running the module on 64 cached repositories: 18 crashed the whole report before (a package without subfolders, a package that is one folder only, a model answer without a quote, a CSV in the Windows encoding).
+
 **Rule files in `data/`:**
 - `formats.json`, `layouts_tue.json`, `components_tue.json`, `readme_tue.json` (from the pack, with the changes below)
 - `README_Template_TUe.txt` (from Zenodo)
@@ -281,6 +283,10 @@ Each file's extension is looked up in `formats.json`, ignoring capitals. Files i
 - Archives themselves (`.zip`, `.tar`, `.gz`, `.tgz`, `.bz2`, `.xz`, `.7z`, `.rar`) are not judged as a format: their files are, and the zipped-package check covers the archive.
 - Added to `formats.json`: HTML and HTM require "no links to files online" (`html-self-contained`), and a list `open_formats` of plain-text formats TU/e's table does not mention (`.yml`, `.yaml`, `.toml`, `.ini`, `.cfg`, `.conf`, `.log`, `.bib`, `.tex`, `.sty`, `.cls`, `.css`, `.cff`, `.csl`, `.lock`, `.Rproj`), which pass like code.
 - PDF/A is recognised by `pdfaid:part` in the file (the whole file up to 50 MB, else its first and last 25 MB); MATLAB 7.3 by the header "MATLAB 7.3 MAT-file".
+
+### Data files can be opened
+
+Added on 2026-10-20. A data file `data_check` cannot open (it warns "Could not read <file>: <reason>": a damaged, empty or password-protected spreadsheet, for example) → **manual**, with each file and the reason, because the file may not open for whoever reuses the data either, and because it was not checked for personal data, missing values or the codebook. When `data_check` itself stops, this check says so (manual). No such file → pass. The reason is said in plain words, without paths on the server: a text file with a spreadsheet's extension (ImageJ saves its tab-separated results as `Results.xls`) is named as such, with the extension to rename it to; a spreadsheet that does not open is "not a valid .xlsx/.xls file"; anything else gets `data_check`'s own reason.
 
 ### 2. Forbidden and special characters, spaces
 

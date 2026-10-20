@@ -32,6 +32,15 @@ test_that(".tdc_item keeps what was found and what to do apart", {
   expect_equal(it$detail, "Three files.\n\n- a\n- b\n\n- Do a.\n- Do b.")
 })
 
+test_that(".tdc_check_failed", {
+  row <- tdc$.tdc_check_failed("formats", "2", "File formats", simpleError("bad\n input."))
+  expect_equal(row$status, "manual")
+  expect_equal(row$found, "This check could not be completed, because of an error: bad input.")
+  expect_match(row$todo, "Check this by hand")
+  row2 <- tdc$.tdc_check_failed("code_check", "2", "Code check", simpleError("x"), what = "metacheck's code_check")
+  expect_match(row2$found, "^metacheck's code_check could not be completed")
+})
+
 test_that(".tdc_worst", {
   expect_equal(tdc$.tdc_worst(c("pass", "warn", "manual")), "warn")
   expect_equal(tdc$.tdc_worst(c("pass", "fail", NA)), "fail")

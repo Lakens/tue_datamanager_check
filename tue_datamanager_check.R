@@ -76,88 +76,168 @@ tue_datamanager_check <- function(paper, local_path = NULL,
   metacheck::llm_use(FALSE)
   on.exit(metacheck::llm_use(llm_before), add = TRUE)
 
+  # -- a check that fails gives one row of its own --------------------------
+  # Every check runs through safe(): an error becomes a "decide by hand" row
+  # for that check (.tdc_check_failed()), so one file the readers cannot
+  # handle never costs the whole report. `fallback` is what the later checks
+  # and the report use instead of the check's result: a check that returns
+  # its row alone gets the row, one that returns list(item, ...) gets
+  # c(list(item = row), fallback).
+  safe <- function(expr, id, section, title, fallback = NULL) {
+    tryCatch(expr, error = function(e) {
+      row <- .tdc_check_failed(id, section, title, e)
+      if (is.null(fallback)) row else c(list(item = row), fallback)
+    })
+  }
+  no_findings <- list(table = NULL, findings = NULL)
+  # metacheck's modules: the result, or the error (class "error")
+  run_quietly <- function(expr) tryCatch(expr, error = function(e) e)
+  failed <- function(x) inherits(x, "error")
+
   # -- the package ---------------------------------------------------------
   pkg <- .tdc_package(local_path)
-  rc <- if (!is.null(pkg$path)) {
+  rc <- tryCatch(if (!is.null(pkg$path)) {
     module_run(paper, "repo_check", local_path = pkg$path, local_only = TRUE)
   } else {
     module_run(paper, "repo_check")
-  }
-  dc <- tryCatch(module_run(rc, "data_check"), error = function(e) NULL)
+  }, error = function(e) {
+    stop("The package's files could not be listed (metacheck's repo_check): ", conditionMessage(e), call. = FALSE)
+  })
+  # data_check warns "Could not read <file>: <reason>" for each data file it
+  # cannot open; those warnings are kept for "Data files can be opened"
+  unreadable <- character(0)
+  dc <- run_quietly(withCallingHandlers(module_run(rc, "data_check"), warning = function(w) {
+    msg <- conditionMessage(w)
+    if (startsWith(msg, "Could not read ")) {
+      unreadable <<- c(unreadable, sub("^Could not read ", "", msg))
+      invokeRestart("muffleWarning")
+    }
+  }))
+  dc_error <- if (failed(dc)) dc
+  if (failed(dc)) dc <- NULL
 
   files <- .tdc_files(rc$table)
   folders <- .tdc_folders(pkg$path, files)
   pkg_name <- if (!is.null(pkg$given)) tools::file_path_sans_ext(basename(pkg$given)) else "package"
+  pkg_info <- tryCatch(.tdc_package_info(files, folders), error = function(e) "")
 
   # -- 1.2 the README (first: its sections count for the components) -------
   readme <- .tdc_find_readme(files)
-  rd <- .tdc_check_readme(readme, files, folders, rules,
-                          pkg_info = .tdc_package_info(files, folders),
-                          revised_file = file.path(readme_revised_dir, paste0(pkg_name, "_README_revised.txt")))
+  rd <- tryCatch(
+    .tdc_check_readme(readme, files, folders, rules, pkg_info = pkg_info,
+                      revised_file = file.path(readme_revised_dir, paste0(pkg_name, "_README_revised.txt"))),
+    error = function(e) {
+      list(items = rbind(.tdc_check_readme_exists(readme, rules),
+                         .tdc_check_failed("readme_template", "1.2", "README follows the TU/e template", e,
+                                           what = "The README check")),
+           sections = NULL, found_sections = character(0), revised = NULL)
+    })
 
   # -- 1.1 components and structure ----------------------------------------
-  comp <- .tdc_check_components(files, readme_sections = rd$found_sections, rules)
+  no_components <- data.frame(component = character(0), group = character(0), title = character(0),
+                              found = character(0), files = character(0), n_files = integer(0),
+                              status = character(0), note = character(0))
+  comp <- safe(.tdc_check_components(files, readme_sections = rd$found_sections, rules),
+               "components", "1.1", "Package components",
+               fallback = list(table = no_components, paths = list()))
   items <- rbind(
     comp$item,
-    .tdc_check_depth(files, folders, rules),
-    .tdc_check_layout(files, folders, rules),
-    .tdc_check_classification(files, rules),
-    .tdc_check_size(files, rules),
+    safe(.tdc_check_depth(files, folders, rules), "folder_depth", "1.1", "Folder depth (up to 3 levels)"),
+    safe(.tdc_check_layout(files, folders, rules), "folder_layout", "1.1", "Component-level organisation"),
+    safe(.tdc_check_classification(files, rules), "file_classification", "1.1", "File classification"),
+    safe(.tdc_check_size(files, rules), "package_size", "1.1", "Package size"),
     rd$items
   )
-  tree <- metacheck:::.file_tree(list(repo_check = rc, data_check = dc))
+  tree <- tryCatch(metacheck:::.file_tree(list(repo_check = rc, data_check = dc)),
+                   error = function(e) sprintf("(The file tree could not be drawn: %s.)", conditionMessage(e)))
 
   # -- 1.3 human participants, ERB letter and consent forms ----------------
   # personal data in the data (section 2) also answers whether people took
   # part: data_check's identifiers and demographic columns, BSN and phone
   # numbers, and pseudonymisation key files
-  pd <- .tdc_personal_data(dc, files, rules)
+  no_personal <- data.frame(path = character(0), column = character(0), kind = character(0))
+  pd <- run_quietly(.tdc_personal_data(dc, files, rules))
+  pd_error <- if (failed(pd)) pd
+  if (failed(pd)) pd <- cbind(no_personal, status = character(0))
   pd_people <- pd[!pd$kind %in% c("free text that may hold personal details", "geographic coordinates"), , drop = FALSE]
-  personal <- rbind(.tdc_personal_from_dc(dc),
+  personal <- rbind(tryCatch(.tdc_personal_from_dc(dc), error = function(e) no_personal),
                     data.frame(path = pd_people$path, column = pd_people$column, kind = pd_people$kind))
   personal <- personal[!duplicated(personal[c("path", "column")]), , drop = FALSE]
   readme_text <- if (!is.null(readme)) .tdc_read_text(readme$location)
-  people <- .tdc_people(human_participants, paper, readme_text,
-                        component_paths = comp$paths, files = files,
-                        personal = personal,
-                        pkg_info = .tdc_package_info(files, folders), rules = rules)
+  people <- tryCatch(
+    .tdc_people(human_participants, paper, readme_text,
+                component_paths = comp$paths, files = files,
+                personal = personal, pkg_info = pkg_info, rules = rules),
+    error = function(e) {
+      list(answer = "unclear", source = "", quote = "", how = "", read = character(0),
+           ethics_statements = list(),
+           item = .tdc_check_failed("human_participants", "1.3", "Human participants or personal data", e))
+    })
   items <- rbind(items, people$item,
-                 .tdc_check_ethics_docs(people$answer, comp$paths, files,
-                                        people$ethics_statements, rules))
+                 safe(.tdc_check_ethics_docs(people$answer, comp$paths, files,
+                                             people$ethics_statements, rules),
+                      "ethics", "1.3", "Ethical approval (ERB letter) and signed informed consent forms"))
 
   # -- 2 file checks -------------------------------------------------------
-  members <- .tdc_zip_members(files)
-  fmt <- .tdc_check_formats(files, members, rules)
-  chars <- .tdc_check_name_characters(files, folders, rules)
-  conv <- .tdc_check_name_conventions(files, folders, rules)
-  junk <- .tdc_check_junk(rc$useless_files, pkg$outer_junk, rules)
-  pers <- .tdc_check_personal_data(pd, length(dc$previews))
-  cb <- if (!is.null(dc)) tryCatch(module_run(dc, "codebook_check"), error = function(e) NULL)
-  cbc <- .tdc_check_codebook_columns(cb, rules)
+  members <- tryCatch(.tdc_zip_members(files), error = function(e) .tdc_zip_members(files[0, , drop = FALSE]))
+  fmt <- safe(.tdc_check_formats(files, members, rules), "formats", "2", "File formats", no_findings)
+  readable <- safe(.tdc_check_data_readable(unique(unreadable), dc_error, rules, files),
+                   "data_readable", "2", "Data files can be opened", no_findings)
+  chars <- safe(.tdc_check_name_characters(files, folders, rules),
+                "name_characters", "2", "No spaces or special characters in names", no_findings)
+  conv <- safe(.tdc_check_name_conventions(files, folders, rules),
+               "name_conventions", "2", "Naming conventions (dates, numbering, one style per folder)", no_findings)
+  junk <- safe(.tdc_check_junk(rc$useless_files, pkg$outer_junk, rules),
+               "junk", "2", "No junk or temporary files", no_findings)
+  pers <- if (!is.null(pd_error)) {
+    list(item = .tdc_check_failed("personal_data", "2", "No personal data", pd_error), table = NULL, findings = pd)
+  } else {
+    safe(.tdc_check_personal_data(pd, length(dc$previews)), "personal_data", "2", "No personal data",
+         list(table = NULL, findings = pd))
+  }
+  cb <- if (!is.null(dc)) run_quietly(module_run(dc, "codebook_check"))
+  cbc <- if (failed(cb)) {
+    list(item = .tdc_check_failed("codebook_columns", "2", "Columns are described in the codebook", cb,
+                                  what = "metacheck's codebook_check"), table = NULL, findings = NULL)
+  } else {
+    safe(.tdc_check_codebook_columns(cb, rules), "codebook_columns", "2",
+         "Columns are described in the codebook", no_findings)
+  }
+  if (failed(cb)) cb <- NULL
   codebook_files <- files$location[files$path %in% comp$paths[["codebook"]] &
                                      files$ext %in% c("txt", "md", "csv", "tsv")]
   doc_text <- paste(c(readme_text, unlist(lapply(codebook_files, .tdc_read_text))), collapse = "\n")
-  miss <- .tdc_check_missing_units(dc, files, doc_text, rules)
-  cc <- tryCatch(module_run(if (!is.null(cb)) cb else if (!is.null(dc)) dc else rc, "code_check"),
-                 error = function(e) NULL)
-  code <- .tdc_check_code(cc, rules)
+  miss <- safe(.tdc_check_missing_units(dc, files, doc_text, rules), "missing_values", "2",
+               "One notation for missing values per table", c(no_findings, list(note = NULL, units = NULL)))
+  cc <- run_quietly(module_run(if (!is.null(cb)) cb else if (!is.null(dc)) dc else rc, "code_check"))
+  code <- if (failed(cc)) {
+    list(item = .tdc_check_failed("code_check", "2", "Code check (metacheck's code_check)", cc,
+                                  what = "metacheck's code_check"), table = NULL, note = NULL)
+  } else {
+    safe(.tdc_check_code(cc, rules), "code_check", "2", "Code check (metacheck's code_check)",
+         list(table = NULL, note = NULL))
+  }
   # running the code: metacheck's reproducibility_check on code_check's
   # results (and data_check's, before them)
   # The code runs in a copy of the package as it is, every file in its own
   # place (layout = "package", metacheck 0.4.0.7), not in a Psych-DS release
   # of its data files only.
-  repro_args <- list(cc, "reproducibility_check", execute = TRUE)
-  if (utils::packageVersion("metacheck") >= "0.4.0.7") repro_args$layout <- "package"
-  rp <- if (isTRUE(run_code) && !is.null(cc) && !identical(cc$traffic_light, "na")) {
-    tryCatch(do.call(metacheck::module_run, utils::modifyList(repro_args, run_args)),
-             error = function(e) e)
+  rp <- if (isTRUE(run_code) && failed(cc)) {
+    simpleError(paste("it needs metacheck's code_check, which stopped:", conditionMessage(cc)))
+  } else if (isTRUE(run_code) && !is.null(cc) && !identical(cc$traffic_light, "na")) {
+    repro_args <- list(cc, "reproducibility_check", execute = TRUE)
+    if (utils::packageVersion("metacheck") >= "0.4.0.7") repro_args$layout <- "package"
+    run_quietly(do.call(metacheck::module_run, utils::modifyList(repro_args, run_args)))
   }
-  runs <- .tdc_check_code_runs(rp, run_code, rules)
-  zipped <- .tdc_check_zipped(pkg, files, rules)
-  items <- rbind(items, fmt$item, chars$item, conv$item, junk$item, pers$item, cbc$item, miss$item,
-                 code$item, runs$item, zipped$item)
-  file_checks <- list(formats = fmt, name_characters = chars, name_conventions = conv, junk = junk,
-                      personal_data = pers, codebook_columns = cbc, missing_values = miss,
+  if (failed(cc)) cc <- NULL
+  runs <- safe(.tdc_check_code_runs(rp, run_code, rules), "code_runs", "2",
+               "The code runs (metacheck's reproducibility_check)", list(table = NULL, note = NULL))
+  zipped <- safe(.tdc_check_zipped(pkg, files, rules), "zipped", "2", "Not zipped", no_findings)
+  items <- rbind(items, fmt$item, readable$item, chars$item, conv$item, junk$item, pers$item, cbc$item,
+                 miss$item, code$item, runs$item, zipped$item)
+  file_checks <- list(formats = fmt, data_readable = readable, name_characters = chars,
+                      name_conventions = conv, junk = junk, personal_data = pers,
+                      codebook_columns = cbc, missing_values = miss,
                       code_check = code, code_runs = runs, zipped = zipped)
 
   # -- the result ----------------------------------------------------------

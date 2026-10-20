@@ -26,6 +26,15 @@ test_that(".tdc_package: a wrapper folder, its junk, and a zip", {
   expect_setequal(z$outer_junk, c(".DS_Store", "__MACOSX/"))
 })
 
+test_that(".tdc_package: a wrapper folder with nothing beside it", {
+  # paste0() gave an empty junk path, on which the junk check crashed
+  dir <- make_package(list("my_package/data/a.csv" = "a\n1"))
+  pkg <- tdc$.tdc_package(dir)
+  expect_equal(pkg$wrapper, c("my_package", "data"))
+  expect_length(pkg$outer_junk, 0)
+  expect_equal(tdc$.tdc_check_junk(NULL, pkg$outer_junk, rules)$item$status, "pass")
+})
+
 test_that(".tdc_files and .tdc_folders", {
   dir <- make_package(list("README.md" = "# x", "data/raw/a.csv" = "a\n1", "code/run.R" = "x <- 1"))
   dir.create(file.path(dir, "empty"))

@@ -40,8 +40,11 @@
     real <- entries[!junk]
     if (length(real) == 1 && dir.exists(file.path(path, real))) {
       out$wrapper <- c(out$wrapper, real)
-      out$outer_junk <- c(out$outer_junk, paste0(prefix, entries[junk],
-                                                 ifelse(dir.exists(file.path(path, entries[junk])), "/", "")))
+      # (paste0() gives the prefix alone when there is no junk, hence the if)
+      if (any(junk)) {
+        out$outer_junk <- c(out$outer_junk, paste0(prefix, entries[junk],
+                                                   ifelse(dir.exists(file.path(path, entries[junk])), "/", "")))
+      }
       prefix <- paste0(prefix, real, "/")
       path <- file.path(path, real)
     } else break
