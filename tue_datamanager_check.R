@@ -118,7 +118,10 @@ tue_datamanager_check <- function(paper, local_path = NULL,
 
   files <- .tdc_files(rc$table)
   folders <- .tdc_folders(pkg$path, files)
-  pkg_name <- if (!is.null(pkg$given)) tools::file_path_sans_ext(basename(pkg$given)) else "package"
+  # only an archive extension is removed: file_path_sans_ext() took the end of
+  # a folder name with dots for one ("doi.org_10.5061_dryad.fk7bh24")
+  pkg_name <- if (!is.null(pkg$given))
+    sub("\\.(zip|tar\\.gz|tgz|tar)$", "", basename(pkg$given), ignore.case = TRUE) else "package"
   pkg_info <- tryCatch(.tdc_package_info(files, folders), error = function(e) "")
 
   # -- 1.2 the README (first: its sections count for the components) -------

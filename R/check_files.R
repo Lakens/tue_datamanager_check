@@ -532,6 +532,9 @@
 # numeric column whose other values are all zero or more (so a real negative
 # measurement is not taken for a code).
 .tdc_missing_notations <- function(x) {
+  # the values without their SPSS/Stata labels: as.numeric() on a labelled
+  # text column stopped ("Can't convert vec_data(x) <character> to <double>")
+  if (inherits(x, "haven_labelled")) x <- as.vector(unclass(x))
   v <- if (is.character(x)) trimws(x) else ifelse(is.na(x), NA, trimws(format(x, scientific = FALSE, trim = TRUE)))
   found <- character(0)
   if (any(is.na(v) | v == "")) found <- c(found, "empty cells")

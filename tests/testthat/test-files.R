@@ -175,6 +175,15 @@ test_that(".tdc_check_codebook_columns", {
 
 # -- 2.7 missing values ----------------------------------------------------------------
 
+test_that(".tdc_missing_notations reads SPSS columns with labels", {
+  # a labelled text column stopped with "Can't convert vec_data(x)"
+  skip_if_not_installed("haven")
+  expect_equal(tdc$.tdc_missing_notations(haven::labelled(c("a", "", "b"), c(A = "a"))),
+               "empty cells")
+  expect_equal(tdc$.tdc_missing_notations(haven::labelled(c(1, -99, 3), c(Missing = -99))),
+               "-99")
+})
+
 test_that(".tdc_missing_notations", {
   expect_equal(tdc$.tdc_missing_notations(c("1", "", "2")), "empty cells")
   expect_setequal(tdc$.tdc_missing_notations(c("1", "NA", "n/a", ".")), c("NA", "N/A", "."))

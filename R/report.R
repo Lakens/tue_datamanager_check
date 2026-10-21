@@ -103,7 +103,10 @@
                          Note = components$note, check.names = FALSE)
   comp_tbl$Group[duplicated(comp_tbl$Group)] <- ""
   fold("components", metacheck::scroll_table(comp_tbl, maxrows = nrow(comp_tbl)),
-       sprintf("Show the %d components TU/e lists", nrow(comp_tbl)))
+       # the same count as the summary ("2 of the 13 components"), which
+       # leaves out the components marked "not expected"
+       sprintf("Show the %d components TU/e lists",
+               sum(components$found != "not expected")))
   fold("file_classification", tree, "File tree")
 
   # 1.2: the README per template section, and the revised README
