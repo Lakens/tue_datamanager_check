@@ -800,6 +800,9 @@
              if (n("dependency_unavailable")) sprintf("Not run, because a package they need could not be installed: %s.", names_of("dependency_unavailable")),
              if (n("not_parsed")) sprintf("Not run, because the code could not be read: %s.", names_of("not_parsed")),
              if (n("timed_out")) sprintf("Still running at the time limit: %s.", names_of("timed_out")),
+             # metacheck's limit for all scripts together (#4, item 6)
+             if (n("skipped_time_limit")) sprintf("Not run, because the time for all scripts together had run out: %s.",
+                                                  names_of("skipped_time_limit")),
              if (n(c("run_by_import", "run_by_source"))) sprintf("Not run on their own, because other files import or source them: %s.",
                                                                 names_of(c("run_by_import", "run_by_source"))),
              if (length(errors)) "The scripts with an error, and the last line of their error:",
@@ -808,9 +811,10 @@
             if (n("skipped_missing_inputs")) "Add the files the scripts read, or say in the README where they can be found.",
             if (n("dependency_unavailable")) "List the packages the code needs, with their versions.",
             if (n("not_parsed")) "Correct the code so it can be read.",
-            if (n("timed_out")) "Say in the README how long the scripts take to run.")
+            if (n(c("timed_out", "skipped_time_limit"))) "Say in the README how long the scripts take to run.")
   if (length(todo) > 1) todo <- paste0("- ", todo)
-  status <- if (n(c("errored", "timed_out", "skipped_missing_inputs", "not_parsed", "dependency_unavailable"))) {
+  status <- if (n(c("errored", "timed_out", "skipped_missing_inputs", "not_parsed", "dependency_unavailable",
+                    "skipped_time_limit"))) {
     .tdc_sev(rules, "code-run-problem")
   } else "pass"
   report <- gsub("^(#+) ", "\\1## ", unlist(strsplit(paste(rp$report %||% character(0), collapse = "\n"), "\n")))

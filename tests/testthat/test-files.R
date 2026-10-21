@@ -312,6 +312,14 @@ test_that(".tdc_check_code_runs", {
   expect_match(out$item$found, "files they read are not in the package: `c.R`", fixed = TRUE)
   expect_match(out$item$todo, "- Make each script run", fixed = TRUE)
   expect_match(out$item$todo, "- Add the files the scripts read", fixed = TRUE)
+  # the time for all scripts together ran out (#4, item 6)
+  rp$run_results <- data.frame(file_name = c("a.R", "b.R"), outcome = c("ran_ok", "skipped_time_limit"),
+                               error = c("", "not started: the time for all scripts together had run out"))
+  out <- tdc$.tdc_check_code_runs(rp, TRUE, rules)
+  expect_equal(out$item$status, "warn")
+  expect_match(out$item$found, "1 of 2 scripts was run", fixed = TRUE)
+  expect_match(out$item$found, "the time for all scripts together had run out: `b.R`", fixed = TRUE)
+  expect_match(out$item$todo, "how long the scripts take to run", fixed = TRUE)
 })
 
 test_that(".tdc_check_zipped", {
