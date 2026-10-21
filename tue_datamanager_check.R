@@ -118,7 +118,10 @@ tue_datamanager_check <- function(paper, local_path = NULL,
 
   files <- .tdc_files(rc$table)
   folders <- .tdc_folders(pkg$path, files)
-  pkg_name <- if (!is.null(pkg$given)) tools::file_path_sans_ext(basename(pkg$given)) else "package"
+  # only an archive extension is removed: file_path_sans_ext() took the end of
+  # a folder name with dots for one ("doi.org_10.5061_dryad.fk7bh24")
+  pkg_name <- if (!is.null(pkg$given))
+    sub("\\.(zip|tar\\.gz|tgz|tar)$", "", basename(pkg$given), ignore.case = TRUE) else "package"
   pkg_info <- tryCatch(.tdc_package_info(files, folders), error = function(e) "")
 
   # -- 1.2 the README (first: its sections count for the components) -------
@@ -181,7 +184,7 @@ tue_datamanager_check <- function(paper, local_path = NULL,
   # -- 2 file checks -------------------------------------------------------
   members <- tryCatch(.tdc_zip_members(files), error = function(e) .tdc_zip_members(files[0, , drop = FALSE]))
   fmt <- safe(.tdc_check_formats(files, members, rules), "formats", "2", "File formats", no_findings)
-  readable <- safe(.tdc_check_data_readable(unique(unreadable), dc_error, rules, files),
+  readable <- safe(.tdc_check_data_readable(unique(unreadable), dc_error, rules, files, dc$table, dc$findings),
                    "data_readable", "2", "Data files can be opened", no_findings)
   chars <- safe(.tdc_check_name_characters(files, folders, rules),
                 "name_characters", "2", "No spaces or special characters in names", no_findings)

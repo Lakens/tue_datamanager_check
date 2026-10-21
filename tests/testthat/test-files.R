@@ -175,6 +175,15 @@ test_that(".tdc_check_codebook_columns", {
 
 # -- 2.7 missing values ----------------------------------------------------------------
 
+test_that(".tdc_missing_notations reads SPSS columns with labels", {
+  # a labelled text column stopped with "Can't convert vec_data(x)"
+  skip_if_not_installed("haven")
+  expect_equal(tdc$.tdc_missing_notations(haven::labelled(c("a", "", "b"), c(A = "a"))),
+               "empty cells")
+  expect_equal(tdc$.tdc_missing_notations(haven::labelled(c(1, -99, 3), c(Missing = -99))),
+               "-99")
+})
+
 test_that(".tdc_missing_notations", {
   expect_equal(tdc$.tdc_missing_notations(c("1", "", "2")), "empty cells")
   expect_setequal(tdc$.tdc_missing_notations(c("1", "NA", "n/a", ".")), c("NA", "N/A", "."))
@@ -236,6 +245,36 @@ test_that(".tdc_check_data_readable", {
   expect_false(grepl(d, txt$item$found, fixed = TRUE))
   expect_match(txt$item$todo, "extension of what they hold")
   expect_equal(tdc$.tdc_unreadable_reason("a.csv", NA, sprintf("cannot open '%s/a.csv' now", d)), "cannot open a.csv now")
+  # an R data file that needs a package the check lacks is not called broken (#4, item 8a)
+  pkg <- tdc$.tdc_check_data_readable(
+    c("dates.rds: there is no package called \u2018lubridate\u2019",
+      "model.RData: unable to load required package 'lme4'",
+      "broken.xlsx: zip file cannot be opened"), NULL, rules)
+  expect_match(pkg$table[["Why it could not be opened"]][1:2],
+               "needs the R package '(lubridate|lme4)' to be opened.*Anyone without that package")
+  expect_match(pkg$item$todo, "- Share files that need an R package to be opened in an open format", fixed = TRUE)
+  expect_match(pkg$item$todo, "- Open the other files yourself", fixed = TRUE)
+  only_pkg <- tdc$.tdc_check_data_readable("dates.rds: there is no package called 'lubridate'", NULL, rules)
+  expect_false(grepl("Open ", only_pkg$item$todo))
+  # columns metacheck read only as their plain stored numbers: a warning
+  cols <- data.frame(source_file = c("trials.rds", "trials.rds", "other.csv"),
+                     column_name = c("id", "dur", "x"),
+                     needs_package = c("", "Duration, from the R package lubridate", ""))
+  conv <- tdc$.tdc_check_data_readable(character(0), NULL, rules,
+                                       files_of("data/trials.rds"), cols)
+  expect_equal(conv$item$status, "warn")
+  expect_match(conv$item$found, "`data/trials.rds` (column `dur`: Duration, from the R package lubridate)", fixed = TRUE)
+  expect_match(conv$item$todo, "open format such as CSV", fixed = TRUE)
+  expect_equal(conv$findings$path, "data/trials.rds")
+  # an .rds file made with save() (#5, item 3)
+  ws <- tdc$.tdc_check_data_readable(character(0), NULL, rules, files_of("Weighting/demos.rds"), NULL,
+                                     data.frame(source_file = "demos.rds", check = "R workspace named .rds"))
+  expect_equal(ws$item$status, "warn")
+  expect_match(ws$item$found, "saved with save() instead of saveRDS(), so readRDS() cannot open it: `Weighting/demos.rds`", fixed = TRUE)
+  expect_match(ws$item$todo, "Rename .rds files made with save() to .RData", fixed = TRUE)
+  # no such columns: still a pass
+  cols$needs_package <- ""
+  expect_equal(tdc$.tdc_check_data_readable(character(0), NULL, rules, NULL, cols)$item$status, "pass")
   stopped <- tdc$.tdc_check_data_readable(character(0), simpleError("out of memory"), rules)
   expect_equal(stopped$item$status, "manual")
   expect_match(stopped$item$found, "data_check.*out of memory")
@@ -293,6 +332,14 @@ test_that(".tdc_check_code_runs", {
   expect_match(out$item$found, "files they read are not in the package: `c.R`", fixed = TRUE)
   expect_match(out$item$todo, "- Make each script run", fixed = TRUE)
   expect_match(out$item$todo, "- Add the files the scripts read", fixed = TRUE)
+  # the time for all scripts together ran out (#4, item 6)
+  rp$run_results <- data.frame(file_name = c("a.R", "b.R"), outcome = c("ran_ok", "skipped_time_limit"),
+                               error = c("", "not started: the time for all scripts together had run out"))
+  out <- tdc$.tdc_check_code_runs(rp, TRUE, rules)
+  expect_equal(out$item$status, "warn")
+  expect_match(out$item$found, "1 of 2 scripts was run", fixed = TRUE)
+  expect_match(out$item$found, "the time for all scripts together had run out: `b.R`", fixed = TRUE)
+  expect_match(out$item$todo, "how long the scripts take to run", fixed = TRUE)
 })
 
 test_that(".tdc_check_zipped", {

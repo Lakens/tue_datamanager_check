@@ -440,6 +440,12 @@
   if (ext %in% c("xlsx", "xlsm") && grepl("zip file .* cannot be opened", reason)) {
     return(sprintf("It is not a valid .%s file: it may be damaged, or another kind of file with this extension.", ext))
   }
+  # an R data file that needs a package the check does not have: anyone
+  # without that package cannot open it either (#4, item 8a)
+  pkg <- regmatches(reason, regexec("(?:unable to load required package|there is no package called) ['\u2018\"]?([A-Za-z0-9.]+)", reason, perl = TRUE))[[1]]
+  if (length(pkg) == 2) {
+    return(sprintf("It needs the R package '%s' to be opened, which is not installed where this check runs, so it was not checked. Anyone without that package cannot open it either.", pkg[[2]]))
+  }
   if (ext == "xls" && grepl("libxls error", reason)) {
     return("It is not a valid .xls file: it may be damaged or password-protected, or another kind of file with this extension.")
   }
@@ -459,37 +465,85 @@
 # inside each file. A file that cannot be opened here may also not open for
 # whoever reuses the data (damaged, empty, password-protected, or text with a
 # spreadsheet's extension), so a person must look: manual.
-.tdc_check_data_readable <- function(unreadable, dc_error, rules, files = NULL) {
+.tdc_check_data_readable <- function(unreadable, dc_error, rules, files = NULL, columns = NULL,
+                                     dc_findings = NULL) {
   title <- "Data files can be opened"
   if (!is.null(dc_error)) {
     return(list(item = .tdc_check_failed("data_readable", "2", title, dc_error,
                                          what = "Reading the data files (metacheck's data_check)"),
                 table = NULL, findings = NULL))
   }
-  if (!length(unreadable)) {
+  # data_check names a file by its name only (its path where several files
+  # share a name); its path in the package and its location come from the
+  # file table
+  path_of <- function(file) {
+    at <- if (!is.null(files)) match(file, files$name) else rep(NA_integer_, length(file))
+    ifelse(is.na(at), file, files$path[at])
+  }
+  # columns metacheck could read only as their plain stored numbers, because
+  # their values need an R package, such as lubridate's periods (#4, item 8a)
+  needs <- if (!is.null(columns) && all(c("source_file", "column_name", "needs_package") %in% names(columns))) {
+    columns[!is.na(columns$needs_package) & nzchar(columns$needs_package), , drop = FALSE]
+  }
+  # .rds files made with save(), which readRDS() cannot open (#5, item 3)
+  ws_rds <- if (!is.null(dc_findings) && all(c("check", "source_file") %in% names(dc_findings))) {
+    unique(dc_findings$source_file[dc_findings$check %in% "R workspace named .rds"])
+  }
+  if (!length(unreadable) && !NROW(needs) && !length(ws_rds)) {
     return(list(item = .tdc_item("data_readable", "2", title, "pass",
                                  "Every data file the check reads (tables, spreadsheets, statistics files) could be opened."),
                 table = NULL, findings = NULL))
   }
-  file <- sub(":.*$", "", unreadable)
-  why <- trimws(sub("^[^:]*:", "", unreadable))
-  # data_check names a file by its name only; its path in the package and its
-  # location come from the file table
-  at <- if (!is.null(files)) match(file, files$name) else rep(NA_integer_, length(file))
-  path <- ifelse(is.na(at), file, files$path[at])
-  location <- if (!is.null(files)) files$location[at] else rep(NA_character_, length(file))
-  why <- vapply(seq_along(file), function(i) .tdc_unreadable_reason(file[[i]], location[[i]], why[[i]]), character(1))
-  file <- path
-  text_file <- grepl("^It is a text file", why)
-  tbl <- data.frame(File = paste0("`", file, "`"), `Why it could not be opened` = why, check.names = FALSE)
-  list(item = .tdc_item("data_readable", "2", title, .tdc_sev(rules, "data-unreadable"),
-                        sprintf("%d data file%s could not be opened: %s (see the table). %s not checked for personal data, missing values or the codebook.",
-                                length(file), if (length(file) == 1) "" else "s", .tdc_list(paste0("`", file, "`"), 5),
-                                if (length(file) == 1) "It was" else "They were"),
-                        c(if (any(text_file)) "Give text files the extension of what they hold (.tsv, .csv or .txt).",
-                          if (!all(text_file)) sprintf("Open %s yourself. If it is damaged, empty or password-protected, replace it with a working copy, preferably in an open format such as CSV.",
-                                                       if (any(text_file)) "the other files" else if (length(file) == 1) "the file" else "each file"))),
-       table = tbl, findings = data.frame(path = file, problem = why))
+  found <- todo <- status <- character(0)
+  tbl <- NULL
+  fnd <- data.frame(path = character(0), problem = character(0))
+  if (length(unreadable)) {
+    file <- sub(":.*$", "", unreadable)
+    why <- trimws(sub("^[^:]*:", "", unreadable))
+    at <- if (!is.null(files)) match(file, files$name) else rep(NA_integer_, length(file))
+    location <- if (!is.null(files)) files$location[at] else rep(NA_character_, length(file))
+    why <- vapply(seq_along(file), function(i) .tdc_unreadable_reason(file[[i]], location[[i]], why[[i]]), character(1))
+    file <- path_of(file)
+    text_file <- grepl("^It is a text file", why)
+    needs_pkg <- grepl("^It needs the R package", why)
+    tbl <- data.frame(File = paste0("`", file, "`"), `Why it could not be opened` = why, check.names = FALSE)
+    found <- sprintf("%d data file%s could not be opened: %s (see the table). %s not checked for personal data, missing values or the codebook.",
+                     length(file), if (length(file) == 1) "" else "s", .tdc_list(paste0("`", file, "`"), 5),
+                     if (length(file) == 1) "It was" else "They were")
+    todo <- c(if (any(text_file)) "Give text files the extension of what they hold (.tsv, .csv or .txt).",
+              if (any(needs_pkg)) "Share files that need an R package to be opened in an open format such as CSV.",
+              if (!all(text_file | needs_pkg)) sprintf("Open %s yourself. If it is damaged, empty or password-protected, replace it with a working copy, preferably in an open format such as CSV.",
+                                                       if (any(text_file | needs_pkg)) "the other files" else if (length(file) == 1) "the file" else "each file"))
+    status <- .tdc_sev(rules, "data-unreadable")
+    fnd <- data.frame(path = file, problem = why)
+  }
+  if (NROW(needs)) {
+    needs$path <- path_of(needs$source_file)
+    by_file <- split(needs, factor(needs$path, levels = unique(needs$path)))
+    desc <- vapply(names(by_file), function(p) {
+      g <- by_file[[p]]
+      sprintf("`%s` (%s)", p, paste(sprintf("column `%s`: %s", g$column_name, g$needs_package), collapse = "; "))
+    }, character(1))
+    found <- c(found, sprintf("%d data file%s could be read only by using the plain stored numbers of columns whose values need an R package: %s. Without that package, %s cannot be opened.",
+                              length(by_file), if (length(by_file) == 1) "" else "s", paste(desc, collapse = ", "),
+                              if (length(by_file) == 1) "the file" else "these files"))
+    todo <- c(todo, "Share the data in an open format such as CSV, with these columns as plain numbers or text.")
+    status <- c(status, .tdc_sev(rules, "data-needs-package"))
+    fnd <- rbind(fnd, data.frame(path = names(by_file), problem = "values that need an R package"))
+  }
+  if (length(ws_rds)) {
+    ws_path <- path_of(ws_rds)
+    found <- c(found, sprintf("%d .rds file%s %s saved with save() instead of saveRDS(), so readRDS() cannot open %s: %s.",
+                              length(ws_path), if (length(ws_path) == 1) "" else "s",
+                              if (length(ws_path) == 1) "was" else "were", if (length(ws_path) == 1) "it" else "them",
+                              .tdc_list(paste0("`", ws_path, "`"), 5)))
+    todo <- c(todo, "Rename .rds files made with save() to .RData, or save them with saveRDS(); better still, share the data in an open format such as CSV.")
+    status <- c(status, .tdc_sev(rules, "data-rds-workspace"))
+    fnd <- rbind(fnd, data.frame(path = ws_path, problem = "an R workspace (made with save()) with the extension .rds"))
+  }
+  if (length(todo) > 1) todo <- paste0("- ", todo)
+  list(item = .tdc_item("data_readable", "2", title, .tdc_worst(status), found, todo),
+       table = tbl, findings = fnd)
 }
 
 # -- 2.6 columns against the codebook -------------------------------------------
@@ -532,6 +586,9 @@
 # numeric column whose other values are all zero or more (so a real negative
 # measurement is not taken for a code).
 .tdc_missing_notations <- function(x) {
+  # the values without their SPSS/Stata labels: as.numeric() on a labelled
+  # text column stopped ("Can't convert vec_data(x) <character> to <double>")
+  if (inherits(x, "haven_labelled")) x <- as.vector(unclass(x))
   v <- if (is.character(x)) trimws(x) else ifelse(is.na(x), NA, trimws(format(x, scientific = FALSE, trim = TRUE)))
   found <- character(0)
   if (any(is.na(v) | v == "")) found <- c(found, "empty cells")
@@ -788,6 +845,9 @@
              if (n("dependency_unavailable")) sprintf("Not run, because a package they need could not be installed: %s.", names_of("dependency_unavailable")),
              if (n("not_parsed")) sprintf("Not run, because the code could not be read: %s.", names_of("not_parsed")),
              if (n("timed_out")) sprintf("Still running at the time limit: %s.", names_of("timed_out")),
+             # metacheck's limit for all scripts together (#4, item 6)
+             if (n("skipped_time_limit")) sprintf("Not run, because the time for all scripts together had run out: %s.",
+                                                  names_of("skipped_time_limit")),
              if (n(c("run_by_import", "run_by_source"))) sprintf("Not run on their own, because other files import or source them: %s.",
                                                                 names_of(c("run_by_import", "run_by_source"))),
              if (length(errors)) "The scripts with an error, and the last line of their error:",
@@ -796,9 +856,10 @@
             if (n("skipped_missing_inputs")) "Add the files the scripts read, or say in the README where they can be found.",
             if (n("dependency_unavailable")) "List the packages the code needs, with their versions.",
             if (n("not_parsed")) "Correct the code so it can be read.",
-            if (n("timed_out")) "Say in the README how long the scripts take to run.")
+            if (n(c("timed_out", "skipped_time_limit"))) "Say in the README how long the scripts take to run.")
   if (length(todo) > 1) todo <- paste0("- ", todo)
-  status <- if (n(c("errored", "timed_out", "skipped_missing_inputs", "not_parsed", "dependency_unavailable"))) {
+  status <- if (n(c("errored", "timed_out", "skipped_missing_inputs", "not_parsed", "dependency_unavailable",
+                    "skipped_time_limit"))) {
     .tdc_sev(rules, "code-run-problem")
   } else "pass"
   report <- gsub("^(#+) ", "\\1## ", unlist(strsplit(paste(rp$report %||% character(0), collapse = "\n"), "\n")))

@@ -45,6 +45,8 @@
     "missing-codes-mixed": "warn",
     "code-check-flagged": "warn",
     "code-run-problem": "warn",
+    "data-needs-package": "warn",
+    "data-rds-workspace": "warn",
     "code-run-unclear": "manual",
     "package-zipped": "fail"
   },

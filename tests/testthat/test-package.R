@@ -44,3 +44,16 @@ test_that(".tdc_files and .tdc_folders", {
   expect_setequal(tdc$.tdc_folders(dir, files), c("data", "data/raw", "code", "empty"))
   expect_setequal(tdc$.tdc_folders(NULL, files), c("data", "data/raw", "code"))
 })
+
+test_that(".tdc_check_depth: deep empty folders and no deep file (#5, item 1)", {
+  files <- data.frame(path = c("README.md", "reproduce/data/a.csv"))
+  folders <- c("reproduce", "reproduce/data", "reproduce/data/00_raw", "reproduce/data/00_raw/w3")
+  out <- tdc$.tdc_check_depth(files, folders, rules)
+  expect_equal(out$status, tdc$.tdc_sev(rules, "too-deep"))
+  expect_match(out$found, "Empty folders that deep: `reproduce/data/00_raw/w3/`", fixed = TRUE)
+  expect_match(out$todo, "Bring these folders to at most 3 folder levels deep", fixed = TRUE)
+  # a deep file is reported as before
+  files <- data.frame(path = c("README.md", "a/b/c/d/e.csv"))
+  deep <- tdc$.tdc_check_depth(files, c("a", "a/b", "a/b/c", "a/b/c/d"), rules)
+  expect_match(deep$found, "The folders with these files: `a/b/c/d/` (1 file)", fixed = TRUE)
+})
