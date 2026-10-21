@@ -55,3 +55,17 @@ test_that("tue_datamanager_check runs on a package", {
   expect_true(file.exists(out$logo))
   expect_match(out$intro[[1]], "TU/e's archiving guidelines")
 })
+
+test_that("a data file with columns that need an R package gives a warning (#4, item 8a)", {
+  no_llm()
+  dir <- make_package(list("README.md" = c("# Study", "", "Data.")))
+  # a made-up package stands in for lubridate, whose periods need it to be read
+  span <- asS4(structure(as.numeric(1:5), class = structure("Span", package = "notinstalledpkg")))
+  saveRDS(structure(list(id = 1:5, span = span), class = "data.frame", row.names = 1:5),
+          file.path(dir, "trials.rds"))
+  out <- metacheck::module_run(metacheck::test_paper(), mod_file, local_path = dir,
+                               human_participants = FALSE, readme_revised_dir = withr::local_tempdir())
+  row <- out$table[out$table$item == "data_readable", ]
+  expect_equal(row$status, "warn")
+  expect_match(row$found, "column `span`: Span, from the R package notinstalledpkg", fixed = TRUE)
+})

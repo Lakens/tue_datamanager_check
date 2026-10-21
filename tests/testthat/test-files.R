@@ -251,10 +251,24 @@ test_that(".tdc_check_data_readable", {
       "model.RData: unable to load required package 'lme4'",
       "broken.xlsx: zip file cannot be opened"), NULL, rules)
   expect_match(pkg$table[["Why it could not be opened"]][1:2],
-               "needs the R package '(lubridate|lme4)'.*not a problem with the file")
-  expect_match(pkg$item$todo, "need no change\\. Open the other files yourself")
+               "needs the R package '(lubridate|lme4)' to be opened.*Anyone without that package")
+  expect_match(pkg$item$todo, "- Share files that need an R package to be opened in an open format", fixed = TRUE)
+  expect_match(pkg$item$todo, "- Open the other files yourself", fixed = TRUE)
   only_pkg <- tdc$.tdc_check_data_readable("dates.rds: there is no package called 'lubridate'", NULL, rules)
   expect_false(grepl("Open ", only_pkg$item$todo))
+  # columns metacheck read only as their plain stored numbers: a warning
+  cols <- data.frame(source_file = c("trials.rds", "trials.rds", "other.csv"),
+                     column_name = c("id", "dur", "x"),
+                     needs_package = c("", "Duration, from the R package lubridate", ""))
+  conv <- tdc$.tdc_check_data_readable(character(0), NULL, rules,
+                                       files_of("data/trials.rds"), cols)
+  expect_equal(conv$item$status, "warn")
+  expect_match(conv$item$found, "`data/trials.rds` (column `dur`: Duration, from the R package lubridate)", fixed = TRUE)
+  expect_match(conv$item$todo, "open format such as CSV", fixed = TRUE)
+  expect_equal(conv$findings$path, "data/trials.rds")
+  # no such columns: still a pass
+  cols$needs_package <- ""
+  expect_equal(tdc$.tdc_check_data_readable(character(0), NULL, rules, NULL, cols)$item$status, "pass")
   stopped <- tdc$.tdc_check_data_readable(character(0), simpleError("out of memory"), rules)
   expect_equal(stopped$item$status, "manual")
   expect_match(stopped$item$found, "data_check.*out of memory")
