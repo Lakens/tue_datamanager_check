@@ -151,7 +151,8 @@
   }
   dirs <- dirname(files$path[deep])
   counts <- sort(table(dirs), decreasing = TRUE)
-  counts <- counts[order(names(counts))]
+  # no deep file, only deep empty folders: an empty table, whose names are NULL (#5, item 1)
+  if (length(counts)) counts <- counts[order(names(counts))]
   listed <- utils::head(names(counts), lim$max_folders_listed)
   more <- length(counts) - length(listed)
   folder_txt <- paste0("`", listed, "/` (", format(as.integer(counts[listed]), big.mark = ",", trim = TRUE),
