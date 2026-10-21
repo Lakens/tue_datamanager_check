@@ -266,6 +266,12 @@ test_that(".tdc_check_data_readable", {
   expect_match(conv$item$found, "`data/trials.rds` (column `dur`: Duration, from the R package lubridate)", fixed = TRUE)
   expect_match(conv$item$todo, "open format such as CSV", fixed = TRUE)
   expect_equal(conv$findings$path, "data/trials.rds")
+  # an .rds file made with save() (#5, item 3)
+  ws <- tdc$.tdc_check_data_readable(character(0), NULL, rules, files_of("Weighting/demos.rds"), NULL,
+                                     data.frame(source_file = "demos.rds", check = "R workspace named .rds"))
+  expect_equal(ws$item$status, "warn")
+  expect_match(ws$item$found, "saved with save() instead of saveRDS(), so readRDS() cannot open it: `Weighting/demos.rds`", fixed = TRUE)
+  expect_match(ws$item$todo, "Rename .rds files made with save() to .RData", fixed = TRUE)
   # no such columns: still a pass
   cols$needs_package <- ""
   expect_equal(tdc$.tdc_check_data_readable(character(0), NULL, rules, NULL, cols)$item$status, "pass")

@@ -184,7 +184,7 @@ tue_datamanager_check <- function(paper, local_path = NULL,
   # -- 2 file checks -------------------------------------------------------
   members <- tryCatch(.tdc_zip_members(files), error = function(e) .tdc_zip_members(files[0, , drop = FALSE]))
   fmt <- safe(.tdc_check_formats(files, members, rules), "formats", "2", "File formats", no_findings)
-  readable <- safe(.tdc_check_data_readable(unique(unreadable), dc_error, rules, files, dc$table),
+  readable <- safe(.tdc_check_data_readable(unique(unreadable), dc_error, rules, files, dc$table, dc$findings),
                    "data_readable", "2", "Data files can be opened", no_findings)
   chars <- safe(.tdc_check_name_characters(files, folders, rules),
                 "name_characters", "2", "No spaces or special characters in names", no_findings)

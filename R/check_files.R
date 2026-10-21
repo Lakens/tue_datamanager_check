@@ -465,7 +465,8 @@
 # inside each file. A file that cannot be opened here may also not open for
 # whoever reuses the data (damaged, empty, password-protected, or text with a
 # spreadsheet's extension), so a person must look: manual.
-.tdc_check_data_readable <- function(unreadable, dc_error, rules, files = NULL, columns = NULL) {
+.tdc_check_data_readable <- function(unreadable, dc_error, rules, files = NULL, columns = NULL,
+                                     dc_findings = NULL) {
   title <- "Data files can be opened"
   if (!is.null(dc_error)) {
     return(list(item = .tdc_check_failed("data_readable", "2", title, dc_error,
@@ -484,7 +485,11 @@
   needs <- if (!is.null(columns) && all(c("source_file", "column_name", "needs_package") %in% names(columns))) {
     columns[!is.na(columns$needs_package) & nzchar(columns$needs_package), , drop = FALSE]
   }
-  if (!length(unreadable) && !NROW(needs)) {
+  # .rds files made with save(), which readRDS() cannot open (#5, item 3)
+  ws_rds <- if (!is.null(dc_findings) && all(c("check", "source_file") %in% names(dc_findings))) {
+    unique(dc_findings$source_file[dc_findings$check %in% "R workspace named .rds"])
+  }
+  if (!length(unreadable) && !NROW(needs) && !length(ws_rds)) {
     return(list(item = .tdc_item("data_readable", "2", title, "pass",
                                  "Every data file the check reads (tables, spreadsheets, statistics files) could be opened."),
                 table = NULL, findings = NULL))
@@ -525,6 +530,16 @@
     todo <- c(todo, "Share the data in an open format such as CSV, with these columns as plain numbers or text.")
     status <- c(status, .tdc_sev(rules, "data-needs-package"))
     fnd <- rbind(fnd, data.frame(path = names(by_file), problem = "values that need an R package"))
+  }
+  if (length(ws_rds)) {
+    ws_path <- path_of(ws_rds)
+    found <- c(found, sprintf("%d .rds file%s %s saved with save() instead of saveRDS(), so readRDS() cannot open %s: %s.",
+                              length(ws_path), if (length(ws_path) == 1) "" else "s",
+                              if (length(ws_path) == 1) "was" else "were", if (length(ws_path) == 1) "it" else "them",
+                              .tdc_list(paste0("`", ws_path, "`"), 5)))
+    todo <- c(todo, "Rename .rds files made with save() to .RData, or save them with saveRDS(); better still, share the data in an open format such as CSV.")
+    status <- c(status, .tdc_sev(rules, "data-rds-workspace"))
+    fnd <- rbind(fnd, data.frame(path = ws_path, problem = "an R workspace (made with save()) with the extension .rds"))
   }
   if (length(todo) > 1) todo <- paste0("- ", todo)
   list(item = .tdc_item("data_readable", "2", title, .tdc_worst(status), found, todo),
