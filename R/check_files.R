@@ -440,6 +440,12 @@
   if (ext %in% c("xlsx", "xlsm") && grepl("zip file .* cannot be opened", reason)) {
     return(sprintf("It is not a valid .%s file: it may be damaged, or another kind of file with this extension.", ext))
   }
+  # an R data file that needs a package the check does not have: the file is
+  # fine, so the researcher should not be told to open it (#4, item 8a)
+  pkg <- regmatches(reason, regexec("(?:unable to load required package|there is no package called) ['\u2018\"]?([A-Za-z0-9.]+)", reason, perl = TRUE))[[1]]
+  if (length(pkg) == 2) {
+    return(sprintf("It needs the R package '%s', which is not installed where this check runs, so it could not be checked here. This is not a problem with the file.", pkg[[2]]))
+  }
   if (ext == "xls" && grepl("libxls error", reason)) {
     return("It is not a valid .xls file: it may be damaged or password-protected, or another kind of file with this extension.")
   }
@@ -481,14 +487,17 @@
   why <- vapply(seq_along(file), function(i) .tdc_unreadable_reason(file[[i]], location[[i]], why[[i]]), character(1))
   file <- path
   text_file <- grepl("^It is a text file", why)
+  # a file that only needs an R package the check lacks is fine (#4, item 8a)
+  needs_pkg <- grepl("^It needs the R package", why)
   tbl <- data.frame(File = paste0("`", file, "`"), `Why it could not be opened` = why, check.names = FALSE)
   list(item = .tdc_item("data_readable", "2", title, .tdc_sev(rules, "data-unreadable"),
                         sprintf("%d data file%s could not be opened: %s (see the table). %s not checked for personal data, missing values or the codebook.",
                                 length(file), if (length(file) == 1) "" else "s", .tdc_list(paste0("`", file, "`"), 5),
                                 if (length(file) == 1) "It was" else "They were"),
                         c(if (any(text_file)) "Give text files the extension of what they hold (.tsv, .csv or .txt).",
-                          if (!all(text_file)) sprintf("Open %s yourself. If it is damaged, empty or password-protected, replace it with a working copy, preferably in an open format such as CSV.",
-                                                       if (any(text_file)) "the other files" else if (length(file) == 1) "the file" else "each file"))),
+                          if (any(needs_pkg)) "Files that need an R package this check does not have were not checked here; they need no change.",
+                          if (!all(text_file | needs_pkg)) sprintf("Open %s yourself. If it is damaged, empty or password-protected, replace it with a working copy, preferably in an open format such as CSV.",
+                                                       if (any(text_file | needs_pkg)) "the other files" else if (length(file) == 1) "the file" else "each file"))),
        table = tbl, findings = data.frame(path = file, problem = why))
 }
 

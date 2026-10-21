@@ -245,6 +245,16 @@ test_that(".tdc_check_data_readable", {
   expect_false(grepl(d, txt$item$found, fixed = TRUE))
   expect_match(txt$item$todo, "extension of what they hold")
   expect_equal(tdc$.tdc_unreadable_reason("a.csv", NA, sprintf("cannot open '%s/a.csv' now", d)), "cannot open a.csv now")
+  # an R data file that needs a package the check lacks is not called broken (#4, item 8a)
+  pkg <- tdc$.tdc_check_data_readable(
+    c("dates.rds: there is no package called \u2018lubridate\u2019",
+      "model.RData: unable to load required package 'lme4'",
+      "broken.xlsx: zip file cannot be opened"), NULL, rules)
+  expect_match(pkg$table[["Why it could not be opened"]][1:2],
+               "needs the R package '(lubridate|lme4)'.*not a problem with the file")
+  expect_match(pkg$item$todo, "need no change\\. Open the other files yourself")
+  only_pkg <- tdc$.tdc_check_data_readable("dates.rds: there is no package called 'lubridate'", NULL, rules)
+  expect_false(grepl("Open ", only_pkg$item$todo))
   stopped <- tdc$.tdc_check_data_readable(character(0), simpleError("out of memory"), rules)
   expect_equal(stopped$item$status, "manual")
   expect_match(stopped$item$found, "data_check.*out of memory")
