@@ -425,6 +425,11 @@
 # ImageJ saves its Results.xls), or a spreadsheet that is damaged.
 .tdc_unreadable_reason <- function(name, location, reason) {
   ext <- tolower(tools::file_ext(name))
+  # an empty file has nothing to open, whatever the reader said ("Unable to
+  # read from file") (scienceverse/surf-research-cloud#10)
+  if (!is.na(location) && file.exists(location) && isTRUE(file.size(location) == 0)) {
+    return("The file is empty (0 bytes).")
+  }
   head <- if (!is.na(location) && file.exists(location)) {
     tryCatch(readBin(location, "raw", 4096), error = function(e) raw(0))
   } else raw(0)
