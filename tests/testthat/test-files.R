@@ -245,6 +245,11 @@ test_that(".tdc_check_data_readable", {
   expect_false(grepl(d, txt$item$found, fixed = TRUE))
   expect_match(txt$item$todo, "extension of what they hold")
   expect_equal(tdc$.tdc_unreadable_reason("a.csv", NA, sprintf("cannot open '%s/a.csv' now", d)), "cannot open a.csv now")
+  # an empty file is called empty, not unreadable (scienceverse/surf-research-cloud#10)
+  file.create(file.path(d, "empty.sav"))
+  expect_equal(tdc$.tdc_unreadable_reason("empty.sav", file.path(d, "empty.sav"),
+                                          "Failed to parse empty.sav: Unable to read from file."),
+               "The file is empty (0 bytes).")
   # an R data file that needs a package the check lacks is not called broken (#4, item 8a)
   pkg <- tdc$.tdc_check_data_readable(
     c("dates.rds: there is no package called \u2018lubridate\u2019",
