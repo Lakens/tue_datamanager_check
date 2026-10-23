@@ -26,6 +26,17 @@ Each check gives one of five results: *to fix*, *to improve*, *decide by hand*, 
 
   Without a local model, the README is checked by its headings and labels instead, no revised README is written, and whether people took part is decided from the data and the README alone (else it is "decide by hand").
 
+  A model on a server you trust, such as TU/e's SPIKE-1 (an OpenAI-compatible gateway on TU/e's own hardware), can be allowed too, through metacheck's `vllm/` route and the option `tdc.trusted_llm`, which lists the addresses the module may send text to:
+
+  ```r
+  options(metacheck.llm.vllm.base_url = "https://spike-gateway-runai-aiteam.inference.spike.tue.nl/v1",
+          tdc.trusted_llm = "https://spike-gateway-runai-aiteam.inference.spike.tue.nl/")
+  Sys.setenv(VLLM_API_KEY = "<your SPIKE-1 key>")
+  llm_model("vllm/DeepSeek-V41-Flash-1017-FP8")
+  ```
+
+  The README and the package's documents are then sent to that server.
+
 ## Install the module
 
 ```r
@@ -78,7 +89,7 @@ In all three, the visitor's browser talks to the SURF server directly; the serve
 When you check a local folder or zip:
 
 - Nothing about the package goes online, with one exception. To decide whether people took part, the module may turn up to 3 scientific documents of the package into text: the manuscript, documents in a folder of scientific documents, the methodology, and PDFs at the top of the package. It does so only when the data and the README have not already answered the question. A PDF is sent to TU/e's GROBID server (`https://grobid.hti.ieis.tue.nl`), and to metacheck's API on SURF Research Cloud only when GROBID cannot convert it (on the SURF server itself, to its own bibr). Pass `human_participants = TRUE` or `FALSE` to skip this. `options(tdc.grobid_url = "...")` uses another GROBID server, and `options(tdc.bibr_fallback = FALSE)` never sends a document to bibr or the SURF API: a PDF GROBID cannot convert is then not read.
-- The language model runs on your own computer (see above).
+- The language model runs on your own computer, or on a server you named in `tdc.trusted_llm` (see above).
 - metacheck's modules read only that folder: `repo_check` runs with `local_only = TRUE`, so no links are followed, and the other modules read the local copies it lists, so nothing is downloaded.
 
 ## The rules

@@ -17,15 +17,19 @@
 
 # TRUE when metacheck's model is a local Ollama model: "ollama/<model>"
 # (metacheck's Ollama route, at OLLAMA_BASE_URL), or "vllm/<model>" pointed at
-# OLLAMA_BASE_URL, as the SURF server sets it.
+# OLLAMA_BASE_URL, as the SURF server sets it. Also TRUE for "vllm/<model>"
+# pointed at an address that starts with one of options(tdc.trusted_llm), such
+# as TU/e's own SPIKE-1 gateway; nothing is trusted this way by default.
 .tdc_local_llm <- function() {
   model <- metacheck::llm_model()
   if (is.null(model) || !nzchar(model)) return(FALSE)
   if (grepl("^ollama", model)) return(TRUE)
   if (startsWith(model, "vllm/")) {
     base <- getOption("metacheck.llm.vllm.base_url", "")
-    ollama <- Sys.getenv("OLLAMA_BASE_URL")
-    return(nzchar(ollama) && startsWith(base, ollama))
+    if (!nzchar(base)) return(FALSE)
+    trusted <- c(Sys.getenv("OLLAMA_BASE_URL"), getOption("tdc.trusted_llm", character()))
+    trusted <- trusted[nzchar(trusted)]
+    return(any(startsWith(base, trusted)))
   }
   FALSE
 }
