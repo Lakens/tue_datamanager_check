@@ -71,7 +71,10 @@
 
 # TU/e's GROBID server, which converts the scientific documents (on a paper
 # new to them, much faster than the SURF API, which is used when GROBID
-# fails); the option "tdc.grobid_url" names another.
+# fails); the option "tdc.grobid_url" names another. The option
+# "tdc.bibr_fallback" = FALSE leaves bibr out: a document GROBID cannot
+# convert is then not read (for a server that runs the check without bibr,
+# such as the TU/e Shiny server).
 .tdc_grobid_url <- "https://grobid.hti.ieis.tue.nl"
 
 # Folders of scientific documents ("1 Scientific documents", "manuscripts",
@@ -130,6 +133,9 @@
     error = function(e) e)
   if (!inherits(paper, "error")) return(list(paper = paper, how = "converted with TU/e's GROBID server"))
   grobid_why <- conditionMessage(paper)
+  if (isFALSE(getOption("tdc.bibr_fallback", TRUE))) {
+    return(list(paper = NULL, why = sprintf("TU/e's GROBID server could not convert it (%s)", grobid_why)))
+  }
   # convert_bibr() picks the bibr: on the SURF server itself (BIBR_API_URL is
   # set there) its own bibr, so a job never waits for another job of the same
   # server; elsewhere the SURF API.

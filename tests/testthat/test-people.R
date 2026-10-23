@@ -93,3 +93,29 @@ test_that(".tdc_check_ethics_docs", {
   expect_equal(out$status[out$item == "ethics"], "fail")
   expect_match(out$detail[out$item == "ethics"], "An approval is mentioned")
 })
+
+test_that(".tdc_read_doc: tdc.bibr_fallback = FALSE never sends a PDF to bibr", {
+  # GROBID fails; bibr must not be called with the option off, and is called
+  # (as before) with it on. Both are replaced, so nothing goes online.
+  pdf <- withr::local_tempfile(fileext = ".pdf")
+  writeLines("%PDF-1.4", pdf)
+  doc <- data.frame(path = "paper.pdf", location = pdf, ext = "pdf")
+  out <- withr::local_tempfile(fileext = ".json")
+  bibr_called <- FALSE
+  testthat::local_mocked_bindings(
+    convert = function(...) stop("GROBID is down"),
+    convert_bibr = function(...) { bibr_called <<- TRUE; stop("bibr is down too") },
+    .package = "metacheck")
+
+  withr::with_options(list(tdc.bibr_fallback = FALSE), {
+    rd <- tdc$.tdc_read_doc(doc, out)
+  })
+  expect_null(rd$paper)
+  expect_match(rd$why, "GROBID server could not convert it (GROBID is down)", fixed = TRUE)
+  expect_false(bibr_called)
+
+  rd2 <- tdc$.tdc_read_doc(doc, out)   # default: the fallback is tried
+  expect_true(bibr_called)
+  expect_null(rd2$paper)
+  expect_match(rd2$why, "neither TU/e's GROBID server")
+})
