@@ -16,8 +16,9 @@
 #' The module runs metacheck's repo_check, data_check, codebook_check and
 #' code_check itself, with the LLM off; it uses the LLM only for its own calls
 #' (the README against the TU/e template, a revised README, and whether people
-#' took part), and only a local Ollama model. To decide whether people took
-#' part, up to 3 scientific documents in the package (the manuscript, the
+#' took part), and only a local Ollama model or a server named in
+#' `options(tdc.trusted_llm)`, such as TU/e's SPIKE-1. To decide whether people
+#' took part, up to 3 scientific documents in the package (the manuscript, the
 #' methodology) are turned into text, a PDF with TU/e's GROBID server or, when
 #' that fails, metacheck's API on SURF Research Cloud; but only when `paper`
 #' has no text and the data and README have not already answered it. The
